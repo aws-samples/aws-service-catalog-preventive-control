@@ -1,0 +1,9 @@
+{
+    "SchemaVersion": "1.0",
+    "ProductVersionName": "1.1",
+    "ProductVersionDescription": "SNS Update",
+    "ProductType": "CLOUD_FORMATION_TEMPLATE",
+    "Properties": {
+        "TemplateFilePath": "/sc-sns.yml"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "SchemaVersion": "1.0",
+    "ProductVersionName": "<Version Number>",
+    "ProductVersionDescription": "<Product Version Description>",
+    "ProductType": "CLOUD_FORMATION_TEMPLATE",
+    "Properties": {
+        "TemplateFilePath": "/<CFN Product Template Name>.yml"
+    }
+}

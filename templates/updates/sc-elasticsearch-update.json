@@ -1,0 +1,9 @@
+{
+    "SchemaVersion": "1.0",
+    "ProductVersionName": "1.1",
+    "ProductVersionDescription": "ElasticSearch Update",
+    "ProductType": "CLOUD_FORMATION_TEMPLATE",
+    "Properties": {
+        "TemplateFilePath": "/sc-elasticsearch.yml"
+    }
+}

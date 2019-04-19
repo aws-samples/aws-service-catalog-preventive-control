@@ -1,0 +1,104 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provision SQS from Service Catalog
+Parameters:
+  QueueName:
+    Description: SQS Queue Name
+    Type: String
+  FifoQueue:
+    Description: 'Is it Fifo Queue'
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  ContentBasedDeduplication:
+    Description: 'Enable content-based deduplication'
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  KMSId:
+    Description: KMS Encryption Key Id
+    Type: String
+  MessageRetentionPeriod:
+    Description: The number of seconds that Amazon SQS retains a message
+    Type: Number
+    MinValue: 60
+    MaxValue: 1209600
+    Default: 345600
+  DelaySeconds:
+    Description: The time in seconds that the delivery of all messages in the queue is delayed
+    Type: Number
+    MinValue: 0
+    MaxValue: 900
+    Default: 0
+  ReceiveMessageWaitTimeSeconds:
+    Description: Receive Message Wait Time
+    Type: Number
+    MinValue: 0
+    MaxValue: 20
+    Default: 0
+  VisibilityTimeout:
+    Description: The length of time during which a message will be unavailable after a message is delivered from the queue
+    Type: Number
+    MinValue: 0
+    MaxValue: 43200
+    Default: 30
+  ProvisionedApplicationName:
+    Description: 'Name of Provision Application'
+    Type: String
+    
+Resources:
+  ProductSelector:
+    Type: "Custom::ProductSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      Action:
+        Name: product
+        Parameters:
+          ProductName: sqs
+  SQS:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProvisionedProductName: !Ref ProvisionedApplicationName
+      ProvisioningParameters:
+        - Key: QueueName
+          Value: !Ref QueueName
+        - Key: FifoQueue
+          Value: !Ref FifoQueue
+        - Key: ContentBasedDeduplication
+          Value: !Ref ContentBasedDeduplication
+        - Key: KMSId
+          Value: !Ref KMSId
+        - Key: MessageRetentionPeriod
+          Value: !Ref MessageRetentionPeriod
+        - Key: DelaySeconds
+          Value: !Ref DelaySeconds
+        - Key: ReceiveMessageWaitTimeSeconds
+          Value: !Ref ReceiveMessageWaitTimeSeconds
+        - Key: VisibilityTimeout
+          Value: !Ref VisibilityTimeout
+
+      ProductId: !GetAtt ProductSelector.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelector.ArtifactId
+
+Outputs:
+  ProductTemplateName:
+    Value: !Select [1, !Split ['/', !Select [5, !Split [':', !GetAtt SQS.CloudformationStackArn ]]]]

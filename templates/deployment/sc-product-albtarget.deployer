@@ -1,0 +1,17 @@
+{
+  "Parameters" : {
+    "PorfolioStack" : "var.portfolioCfn",
+    "ProductName" : "albtarget",
+    "ProductDescription" : "Application Load Balancer Target Group",
+    "ProductVersion" : "1.0",
+    "ProductVersionDescription" : "Initial Version",
+    "ProductTemplateUrl" : "var.deploymentBucket/products/alb/sc-alb-target.yml",
+    "ProductRoleName" : "sc-alb-product-role",
+    "ProductPolicyName" : "var.policy",
+    "ProductRoleTemplateUrl" : "var.deploymentBucket/products/alb/sc-alb-products-role.yml",
+    "TemplateRuleConstraint" : "",
+    "DeploymentBucket" : "var.deploymentBucket",
+    "DeployUpdatePipeline":"true",
+    "UpdateConfigFileName": "sc-alb-target-update"
+  }
+}

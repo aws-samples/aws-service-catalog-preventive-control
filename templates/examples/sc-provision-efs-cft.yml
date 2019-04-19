@@ -1,0 +1,49 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provision EFS from Service Catalog
+Parameters:
+  KMSId:
+    Description: KMS Encryption Key Id
+    Type: String
+  ProvisionedApplicationName:
+    Description: 'Name of Provision Application'
+    Type: String
+    
+Resources:
+  ProductSelector:
+    Type: "Custom::ProductSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      Action:
+        Name: product
+        Parameters:
+          ProductName: efs
+  EFS:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProvisionedProductName: !Ref ProvisionedApplicationName
+      ProvisioningParameters:
+        - Key: KMSId
+          Value: !Ref KMSId
+
+      ProductId: !GetAtt ProductSelector.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelector.ArtifactId
+
+Outputs:
+  ProductTemplateName:
+    Value: !Select [1, !Split ['/', !Select [5, !Split [':', !GetAtt EFS.CloudformationStackArn ]]]]

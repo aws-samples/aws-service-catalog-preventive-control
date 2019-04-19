@@ -1,0 +1,55 @@
+{
+  "Parameters": {
+    "PorfolioStack": "var.portfolioCfn",
+    "ProductName": "dmsinstance",
+    "ProductDescription": "DMS Replication Instance",
+    "ProductVersion": "1.0",
+    "ProductVersionDescription": "Initial Version",
+    "ProductTemplateUrl": "var.deploymentBucket/products/dmsinstance/sc-dmsinstance.yml",
+    "ProductRoleName": "sc-dms-instance-product-role",
+    "ProductPolicyName": "var.policy",
+    "ProductRoleTemplateUrl": "var.deploymentBucket/products/dmsinstance/sc-dmsinstance-products-role.yml",
+    "TemplateRuleConstraint": {
+      "ReplicationInstanceClass": {
+        "Assertions": [
+          {
+            "Assert": {
+              "Fn::Contains": [
+                [
+                  "dms.t2.large",
+                  "dms.r4.large",
+                  "dms.r4.xlarge"
+                ],
+                {
+                  "Ref": "ReplicationInstanceClass"
+                }
+              ]
+            },
+            "AssertDescription": "Replication Instance Type"
+          }
+        ]
+      },
+      "EngineVersion": {
+        "Assertions": [
+          {
+            "Assert": {
+              "Fn::Contains": [
+                [
+                  "3.1.2",
+                  "2.4.4"
+                ],
+                {
+                  "Ref": "EngineVersion"
+                }
+              ]
+            },
+            "AssertDescription": "Engine Version"
+          }
+        ]
+      }
+    },
+    "DeploymentBucket": "var.deploymentBucket",
+    "DeployUpdatePipeline": "true",
+    "UpdateConfigFileName": "sc-dmsinstance-update"
+  }
+}

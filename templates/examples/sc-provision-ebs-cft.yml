@@ -1,0 +1,81 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provision EBS from Service Catalog
+Parameters:
+  AutoEnableIO:
+    Description: 'Indicates whether the volume is auto-enabled for I/O operations.'
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  AvailabilityZone:
+    Description: 'The Availability Zone in which to create the new volume'
+    Type: AWS::EC2::AvailabilityZone::Name
+  KMSId:
+    Description: KMS Encryption Key Id
+    Type: String
+  VolumeSize:
+    Description: The size of the volume, in gibibytes (GiBs).
+    Type: Number
+    MinValue: 1
+    MaxValue: 500
+    Default: 10
+  SnapshotId:
+    Description: The snapshot from which to create the new volume.
+    Type: String
+    Default: ''
+  Name:
+    Description: 'EBS Volume Name'
+    Type: String
+  ProvisionedApplicationName:
+    Description: 'Name of Provision Application'
+    Type: String
+    
+Resources:
+  ProductSelector:
+    Type: "Custom::ProducteSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      Action:
+        Name: product
+        Parameters:
+          ProductName: ebs
+  EBS:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProvisionedProductName: !Ref ProvisionedApplicationName
+      ProvisioningParameters:
+        - Key: AutoEnableIO
+          Value: !Ref AutoEnableIO
+        - Key: AvailabilityZone
+          Value: !Ref AvailabilityZone
+        - Key: KMSId
+          Value: !Ref KMSId
+        - Key: VolumeSize
+          Value: !Ref VolumeSize
+        - Key: SnapshotId
+          Value: !Ref SnapshotId
+        - Key: Name
+          Value: !Ref Name
+      ProductId: !GetAtt ProductSelector.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelector.ArtifactId
+
+Outputs:
+  ProductTemplateName:
+    Value: !Select [1, !Split ['/', !Select [5, !Split [':', !GetAtt EBS.CloudformationStackArn ]]]]
