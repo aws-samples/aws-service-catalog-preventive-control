@@ -1,0 +1,191 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Service Catalog Deny Policy
+Parameters:
+  PolicyName:
+    Description: Service Catalog Deny Policy Name
+    Type: String
+
+Resources:
+  SCDenyPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: !Ref PolicyName
+      Description: "Policy to Deny Launch Products outside Service Catalog"
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Sid: alb
+            Effect: "Deny"
+            Action:
+              - elasticloadbalancing:ModifyListener
+              - elasticloadbalancing:RegisterTargets
+              - elasticloadbalancing:RemoveListenerCertificates
+              - elasticloadbalancing:DeleteLoadBalancer
+              - elasticloadbalancing:DescribeLoadBalancers
+              - elasticloadbalancing:RemoveTags
+              - elasticloadbalancing:CreateListener
+              - elasticloadbalancing:CreateRule
+              - elasticloadbalancing:AddListenerCertificates
+              - elasticloadbalancing:ModifyTargetGroupAttributes
+              - elasticloadbalancing:DeleteRule
+              - elasticloadbalancing:DescribeSSLPolicies
+              - elasticloadbalancing:CreateLoadBalancer
+              - elasticloadbalancing:CreateTargetGroup
+              - elasticloadbalancing:DeregisterTargets
+              - elasticloadbalancing:SetSubnets
+              - elasticloadbalancing:DeleteTargetGroup
+              - elasticloadbalancing:ModifyRule
+              - elasticloadbalancing:AddTags
+              - elasticloadbalancing:SetSecurityGroups
+              - elasticloadbalancing:ModifyLoadBalancerAttributes
+              - elasticloadbalancing:ModifyTargetGroup
+              - elasticloadbalancing:DeleteListener
+            Resource: "*"
+          -
+            Sid: autoscaling
+            Effect: "Deny"
+            Action:
+              - "autoscaling:CreateLaunchConfiguration"
+              - "autoscaling:DeleteTags"
+              - "autoscaling:DeleteLaunchConfiguration"
+              - "autoscaling:CreateOrUpdateTags"
+              - "autoscaling:PutScalingPolicy"
+              - "autoscaling:UpdateAutoScalingGroup"
+              - "autoscaling:DeleteAutoScalingGroup"
+              - "autoscaling:CreateAutoScalingGroup"
+              - "autoscaling:DeletePolicy"
+            Resource: "*"
+          -
+            Sid: dms
+            Effect: "Deny"
+            Action:
+              - "dms:CreateEndpoint"
+              - "dms:RemoveTagsFromResource"
+              - "dms:ModifyReplicationInstance"
+              - "dms:DeleteEndpoint"
+              - "dms:DeleteReplicationInstance"
+              - "dms:ModifyEndpoint"
+              - "dms:AddTagsToResource"
+              - "dms:CreateReplicationInstance"
+            Resource: "*"
+          -
+            Sid: dynamodb
+            Effect: "Deny"
+            Action:
+              - "dynamodb:CreateTable"
+              - "dynamodb:TagResource"
+              - "dynamodb:UntagResource"
+              - "dynamodb:DeleteTable"
+            Resource: "*"
+          -
+            Sid: ebs
+            Effect: "Deny"
+            Action:
+              - "ec2:DeleteVolume"
+              - "ec2:DeleteTags"
+              - "ec2:CreateTags"
+              - "ec2:CreateVolume"
+            Resource: "*"
+          -
+            Sid: efs
+            Effect: "Deny"
+            Action:
+              - "elasticfilesystem:CreateFileSystem"
+              - "elasticfilesystem:DeleteFileSystem"
+              - "elasticfilesystem:CreateTags"
+              - "elasticfilesystem:DeleteTags"
+            Resource: "*"
+          -
+            Sid: elasticache
+            Effect: "Deny"
+            Action:
+              - "elasticache:RemoveTagsFromResource"
+              - "elasticache:DeleteCacheCluster"
+              - "elasticache:CreateReplicationGroup"
+              - "elasticache:AddTagsToResource"
+              - "elasticache:DeleteReplicationGroup"
+              - "elasticache:ModifyReplicationGroup"
+              - "elasticache:CreateCacheCluster"
+            Resource: "*"
+          -
+            Sid: elasticsearch
+            Effect: "Deny"
+            Action:
+              - "es:CreateElasticsearchDomain"
+              - "es:DeleteElasticsearchDomain"
+              - "es:AddTags"
+              - "es:RemoveTags"
+            Resource: "*"
+          -
+            Sid: fsx
+            Effect: "Deny"
+            Action:
+              - "fsx:CreateFileSystem"
+              - "fsx:UntagResource"
+              - "fsx:TagResource"
+              - "fsx:UpdateFileSystem"
+              - "fsx:DeleteFileSystem"
+            Resource: "*"
+          -
+            Sid: kinesis
+            Effect: "Deny"
+            Action:
+              - "kinesis:DeleteStream"
+              - "kinesis:AddTagsToStream"
+              - "kinesis:CreateStream"
+            Resource: "*"
+          -
+            Sid: sagemaker
+            Effect: "Deny"
+            Action:
+              - "sagemaker:DeleteTags"
+              - "sagemaker:DeleteEndpointConfig"
+              - "sagemaker:CreateEndpoint"
+              - "sagemaker:DeleteNotebookInstance"
+              - "sagemaker:CreateNotebookInstanceLifecycleConfig"
+              - "sagemaker:CreateNotebookInstance"
+              - "sagemaker:CreateEndpointConfig"
+              - "sagemaker:CreatePresignedNotebookInstanceUrl"
+              - "sagemaker:DeleteEndpoint"
+              - "sagemaker:DeleteNotebookInstanceLifecycleConfig"
+              - "sagemaker:AddTags"
+            Resource: "*"
+          -
+            Sid: sns
+            Effect: "Deny"
+            Action:
+              - "sns:DeleteTopic"
+              - "sns:CreateTopic"
+              - "sns:AddPermission"
+              - "sns:RemovePermission"
+            Resource: "*"
+          -
+            Sid: sqs
+            Effect: "Deny"
+            Action:
+              - "sqs:DeleteQueue"
+              - "sqs:CreateQueue"
+              - "sqs:TagQueue"
+              - "sqs:UntagQueue"
+            Resource: "*"
+
+Outputs:
+  DenyPolicyArn:
+    Value: !Ref SCDenyPolicy
