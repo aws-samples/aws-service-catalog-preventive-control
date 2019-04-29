@@ -6,7 +6,7 @@
     "ProductVersion" : "1.0",
     "ProductVersionDescription" : "Initial Version",
     "ProductTemplateUrl" : "var.deploymentBucket/products/alb/sc-alb-target.yml",
-    "ProductRoleName" : "sc-alb-product-role",
+    "ProductRoleName" : "sc-alb-target-product-role",
     "ProductPolicyName" : "var.policy",
     "ProductRoleTemplateUrl" : "var.deploymentBucket/products/alb/sc-alb-products-role.yml",
     "TemplateRuleConstraint" : "",

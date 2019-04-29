@@ -28,24 +28,6 @@
             "AssertDescription": "Replication Instance Type"
           }
         ]
-      },
-      "EngineVersion": {
-        "Assertions": [
-          {
-            "Assert": {
-              "Fn::Contains": [
-                [
-                  "3.1.2",
-                  "2.4.4"
-                ],
-                {
-                  "Ref": "EngineVersion"
-                }
-              ]
-            },
-            "AssertDescription": "Engine Version"
-          }
-        ]
       }
     },
     "DeploymentBucket": "var.deploymentBucket",
