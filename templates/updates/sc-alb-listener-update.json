@@ -1,0 +1,9 @@
+{
+    "SchemaVersion": "1.0",
+    "ProductVersionName": "1.1",
+    "ProductVersionDescription": "Application Load Balancer Listener Update",
+    "ProductType": "CLOUD_FORMATION_TEMPLATE",
+    "Properties": {
+        "TemplateFilePath": "/sc-alb-listener.yml"
+    }
+}
