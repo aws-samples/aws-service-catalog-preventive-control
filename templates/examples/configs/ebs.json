@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey" : "AutoEnableIO",
+    "ParameterValue" : "false"
+  },
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "VolumeSize",
+    "ParameterValue" : "1"
+  },
+  {
+    "ParameterKey" : "Name",
+    "ParameterValue" : "myEBS"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-ebs"
+  }
+]

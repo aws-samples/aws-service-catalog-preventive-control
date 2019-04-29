@@ -43,17 +43,14 @@ Parameters:
   ProvisionedApplicationName:
     Description: 'Name of Provision Application'
     Type: String
-    
+
 Resources:
   ProductSelector:
     Type: "Custom::ProductSelector"
     Version: "1.0"
     Properties:
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
-      Action:
-        Name: product
-        Parameters:
-          ProductName: dmsinstance
+      ProductName: dmsinstance
   DMS:
     Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
     Properties:
@@ -73,6 +70,8 @@ Resources:
           Value: !Ref SecurityGroupIds
         - Key: KMSId
           Value: !Ref KMSId
+        - Key: Tags
+          Value: !Sub 'Name=${ReplicationInstanceIdentifier},Environment=Test'           
       ProductId: !GetAtt ProductSelector.ProductId
       ProvisioningArtifactId: !GetAtt ProductSelector.ArtifactId
 

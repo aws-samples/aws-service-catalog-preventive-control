@@ -1,0 +1,81 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provision SageMaker from Service Catalog
+Parameters:
+  KMSId:
+    Description: KMS Encryption Key Id
+    Type: String
+  InstanceType:
+    Description: The type of ML compute instance to launch for the notebook instance
+    Type: String
+  NotebookInstanceName:
+    Description: The name of the new notebook instance.
+    Type: String
+  RoleName:
+    Description: Name of SageMaker IAM Role.
+    Type: String
+  SubnetId:
+    Description: The ID of the subnet in a VPC to which you would like to have a connectivity from your ML compute instance
+    Type: String
+  SecurityGroupIds:
+    Description: VPC Security Groups Ids as comma separated list
+    Type: String
+  VolumeSizeInGB:
+      Description: The size, in GB, of the ML storage volume to attach to the notebook instance
+      Type: Number
+      MinValue: 5
+      MaxValue: 16384
+      Default: 5
+  ProvisionedApplicationName:
+    Description: 'Name of Provision Application'
+    Type: String
+
+Resources:
+  ProductSelector:
+    Type: "Custom::ProductSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      ProductName: sagemaker
+  SageMaker:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProvisionedProductName: !Ref ProvisionedApplicationName
+      ProvisioningParameters:
+        - Key: InstanceType
+          Value: !Ref InstanceType
+        - Key: KMSId
+          Value: !Ref KMSId
+        - Key: NotebookInstanceName
+          Value: !Ref NotebookInstanceName
+        - Key: RoleArn
+          Value: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${RoleName}'
+        - Key: SubnetId
+          Value: !Ref SubnetId
+        - Key: SecurityGroupIds
+          Value: !Ref SecurityGroupIds
+        - Key: VolumeSizeInGB
+          Value: !Ref VolumeSizeInGB
+        - Key: Tags
+          Value: !Sub 'Name=${NotebookInstanceName},Environment=Test'
+
+      ProductId: !GetAtt ProductSelector.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelector.ArtifactId
+
+Outputs:
+  ProductTemplateName:
+    Value: !Select [1, !Split ['/', !Select [5, !Split [':', !GetAtt SageMaker.CloudformationStackArn ]]]]

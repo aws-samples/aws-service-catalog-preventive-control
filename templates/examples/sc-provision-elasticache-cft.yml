@@ -33,6 +33,7 @@ Parameters:
     Description: The password that's used to access a password-protected server
     Type: String
     NoEcho: true
+    Default: ''
   CacheSubnetGroupName:
     Description: Cache Subnet Group Name
     Type: String
@@ -49,10 +50,7 @@ Resources:
     Version: "1.0"
     Properties:
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
-      Action:
-        Name: product
-        Parameters:
-          ProductName: elasticache
+      ProductName: elasticache
   EC:
     Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
     Properties:
@@ -70,6 +68,8 @@ Resources:
           Value: !Ref CacheSubnetGroupName
         - Key: SecurityGroupIds
           Value: !Ref SecurityGroupIds
+        - Key: Tags
+          Value: !Sub 'Name=${ClusterName},Environment=Test'
 
       ProductId: !GetAtt ProductSelector.ProductId
       ProvisioningArtifactId: !GetAtt ProductSelector.ArtifactId

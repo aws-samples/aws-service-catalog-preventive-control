@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey" : "ReplicationInstanceIdentifier",
+    "ParameterValue" : "mydmsinstance"
+  },
+  {
+    "ParameterKey" : "ReplicationInstanceClass",
+    "ParameterValue" : "dms.t2.large"
+  },
+  {
+    "ParameterKey" : "EngineVersion",
+    "ParameterValue" : "3.1.3"
+  },
+  {
+    "ParameterKey" : "Storage",
+    "ParameterValue" : "50"
+  },
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "ReplicationSubnetGroupIdentifier",
+    "ParameterValue" : "var.dmssubnet"
+  },
+  {
+    "ParameterKey" : "SecurityGroupIds",
+    "ParameterValue" : "var.sg"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-dms-instance"
+  }
+]

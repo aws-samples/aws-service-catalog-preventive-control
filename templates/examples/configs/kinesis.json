@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey" : "Name",
+    "ParameterValue" : "mykinesisstream"
+  },
+  {
+    "ParameterKey" : "RetentionPeriodHours",
+    "ParameterValue" : "24"
+  },
+  {
+    "ParameterKey" : "ShardCount",
+    "ParameterValue" : "1"
+  },
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-kinesis"
+  }
+]

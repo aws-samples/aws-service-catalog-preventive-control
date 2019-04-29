@@ -25,17 +25,14 @@ Parameters:
   ProvisionedApplicationName:
     Description: 'Name of Provision Application'
     Type: String
-    
+
 Resources:
   ProductSelector:
     Type: "Custom::ProductSelector"
     Version: "1.0"
     Properties:
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
-      Action:
-        Name: product
-        Parameters:
-          ProductName: sns
+      ProductName: sns
   SNS:
     Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
     Properties:

@@ -1,0 +1,50 @@
+[
+  {
+    "ParameterKey" : "DomainName",
+    "ParameterValue" : "mydomain"
+  },
+  {
+    "ParameterKey" : "ElasticsearchVersion",
+    "ParameterValue" : "6.2"
+  },
+  {
+    "ParameterKey" : "InstanceType",
+    "ParameterValue" : "m4.large.elasticsearch"
+  },
+  {
+    "ParameterKey" : "InstanceCount",
+    "ParameterValue" : "1"
+  },
+  {
+    "ParameterKey" : "DedicatedMasterType",
+    "ParameterValue" : "m4.large.elasticsearch"
+  },
+  {
+    "ParameterKey" : "DedicatedMasterCount",
+    "ParameterValue" : "0"
+  },
+  {
+    "ParameterKey" : "VolumeSize",
+    "ParameterValue" : "10"
+  },
+  {
+    "ParameterKey" : "EnableZoneAwareness",
+    "ParameterValue" : "false"
+  },
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "SubnetIds",
+    "ParameterValue" : "var.subnet"
+  },
+  {
+    "ParameterKey" : "SecurityGroupIds",
+    "ParameterValue" : "var.sg"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-elasticsearch"
+  }
+]

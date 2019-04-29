@@ -23,9 +23,6 @@ Parameters:
     AllowedValues:
       - true
       - false
-  AvailabilityZone:
-    Description: 'The Availability Zone in which to create the new volume'
-    Type: AWS::EC2::AvailabilityZone::Name
   KMSId:
     Description: KMS Encryption Key Id
     Type: String
@@ -45,17 +42,14 @@ Parameters:
   ProvisionedApplicationName:
     Description: 'Name of Provision Application'
     Type: String
-    
+
 Resources:
   ProductSelector:
     Type: "Custom::ProducteSelector"
     Version: "1.0"
     Properties:
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
-      Action:
-        Name: product
-        Parameters:
-          ProductName: ebs
+      ProductName: ebs
   EBS:
     Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
     Properties:
@@ -64,15 +58,17 @@ Resources:
         - Key: AutoEnableIO
           Value: !Ref AutoEnableIO
         - Key: AvailabilityZone
-          Value: !Ref AvailabilityZone
+          Value: !Select
+            - 0
+            - Fn::GetAZs: !Ref 'AWS::Region'
         - Key: KMSId
           Value: !Ref KMSId
         - Key: VolumeSize
           Value: !Ref VolumeSize
         - Key: SnapshotId
           Value: !Ref SnapshotId
-        - Key: Name
-          Value: !Ref Name
+        - Key: Tags
+          Value: !Sub 'Name=${Name},Environment=Test'
       ProductId: !GetAtt ProductSelector.ProductId
       ProvisioningArtifactId: !GetAtt ProductSelector.ArtifactId
 

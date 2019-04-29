@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey" : "TableName",
+    "ParameterValue" : "testtable"
+  },
+  {
+    "ParameterKey" : "ReadCapacityUnits",
+    "ParameterValue" : "5"
+  },
+  {
+    "ParameterKey" : "WriteCapacityUnits",
+    "ParameterValue" : "5"
+  },
+  {
+    "ParameterKey" : "KeySchema",
+    "ParameterValue" : "Id=HASH,Name=RANGE"
+  },
+  {
+    "ParameterKey" : "AttributeDefinitions",
+    "ParameterValue" : "Id=S,Name=S"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-dynamodb"
+  }
+]

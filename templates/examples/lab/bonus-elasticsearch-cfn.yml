@@ -1,0 +1,90 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Service Catalog Lab - Provision ElasticSearch from Service Catalog
+Resources:
+  ESResourceSelector:
+    Type: "Custom::ResourceSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-resource-selector'
+      Options:
+        OnError: failed
+      Resources:
+        vpc:
+          Tags:
+            - Key: Env
+              Value: lab
+            - Key: Name
+              Value: sc-lab-vpc
+          Options:
+            Match: all
+            Output: single
+        subnet:
+          Tags:
+            - Key: Env
+              Value: lab
+            - Key: sdlc
+              Value: web
+            - Key: Name
+              Value: sc-lab-web-subnet
+          Options:
+            Match: all
+            Output: single
+        sg:
+          Tags:
+            - Key: Env
+              Value: lab
+            - Key: sdlc
+              Value: web
+            - Key: Name
+              Value: sc-lab-web-sg
+          Options:
+            Match: all
+            Output: single
+            GroupName: sc-lab-web-sg  
+  ProductSelectorES:
+    Type: "Custom::ProductSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      Action:
+        Name: product
+        Parameters:
+          ProductName: elasticsearch
+  ES:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    DependsOn: LabKMSKeyAlias
+    Properties:
+      ProvisionedProductName: 'sc-lab-elasticsearch'
+      ProvisioningParameters:
+        - Key: DomainName
+          Value: sc-lab-es
+        - Key: InstanceType
+          Value: m4.large.elasticsearch
+        - Key: DedicatedMasterType
+          Value: m4.large.elasticsearch
+        - Key: ESAccessPrincipalFull
+          Value: !GetAtt KinesisRole.Arn
+        - Key: KMSId
+          Value: !Ref LabKMSKey
+        - Key: SubnetIds
+          Value: !GetAtt ESResourceSelector.subnet
+        - Key: SecurityGroupIds
+          Value: !GetAtt ESResourceSelector.sg
+
+      ProductId: !GetAtt ProductSelectorES.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelectorES.ArtifactId

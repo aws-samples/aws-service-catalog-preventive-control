@@ -1,0 +1,164 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Service Catalog Test - Networks
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 172.16.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Env
+          Value: test
+        - Key: Name
+          Value: sc-test-vpc
+
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock: 172.16.1.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Env
+          Value: test
+        - Key: Name
+          Value: sc-test-subnet-1
+
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock: 172.16.2.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Env
+          Value: test
+        - Key: Name
+          Value: sc-test-subnet-2
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SC Test Security Group
+      GroupName: sc-lab-test-sg
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Env
+          Value: test
+        - Key: Name
+          Value: sc-test-sg
+
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "Test KMS Key"
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "key-default-1"
+        Statement:
+         -
+            Sid: "Enable IAM User Permissions"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-alb-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-autoscaling-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-alb-listener-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-alb-target-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-dms-endpoint-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-dms-instance-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-dynamodb-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-ebs-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-efs-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-elasticache-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-elasticsearch-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-fsx-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-kinesis-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-sns-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-sqs-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-sagemaker-product-role'
+            Action: "kms:*"
+            Resource: "*"
+
+  DMSReplicationSubnetGroup:
+    Type: AWS::DMS::ReplicationSubnetGroup
+    Properties:
+      ReplicationSubnetGroupIdentifier: "dmstestreplicationgroup"
+      ReplicationSubnetGroupDescription: "Test DMS Replication Group"
+      SubnetIds:
+        - !Ref SubnetA
+        - !Ref SubnetB
+
+  ECSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: "Cache Subnet Group"
+      CacheSubnetGroupName: ec-test-subnet-group
+      SubnetIds:
+        - !Ref SubnetA
+        - !Ref SubnetB
+
+  ECSecurityGroup:
+    Type: AWS::ElastiCache::SecurityGroup
+    Properties:
+      Description: ec-test-security-group
+
+  SageMakerRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: sc-test-sagemaker-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+
+Outputs:
+  VPCId:
+    Value: !Ref VPC
+  SubnetA:
+    Value: !Ref SubnetA
+  SubnetB:
+    Value: !Ref SubnetB
+  TestSG:
+    Value: !Ref SecurityGroup
+  TestKMS:
+    Value: !Ref KMSKey
+  DMSGroup:
+    Value: !Ref DMSReplicationSubnetGroup
+  ECSubnet:
+    Value: !Ref ECSubnetGroup
+  ECSG:
+    Value: !Ref ECSecurityGroup
+  SMRole:
+    Value: !Ref SageMakerRole

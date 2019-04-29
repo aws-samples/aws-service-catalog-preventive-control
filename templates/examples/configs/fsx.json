@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "StorageCapacity",
+    "ParameterValue" : "300"
+  },
+  {
+    "ParameterKey" : "SubnetIds",
+    "ParameterValue" : "var.adsubnet"
+  },
+  {
+    "ParameterKey" : "SecurityGroupIds",
+    "ParameterValue" : "var.adsg"
+  },
+  {
+    "ParameterKey" : "ActiveDirectoryId",
+    "ParameterValue" : "var.ad"
+  },
+  {
+    "ParameterKey" : "ThroughputCapacity",
+    "ParameterValue" : "8"
+  },
+  {
+    "ParameterKey" : "AutomaticBackupRetentionDays",
+    "ParameterValue" : "0"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-fsx"
+  }
+]

@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "InstanceType",
+    "ParameterValue" : "ml.t3.medium"
+  },
+  {
+    "ParameterKey" : "NotebookInstanceName",
+    "ParameterValue" : "mysagemaker"
+  },
+  {
+    "ParameterKey" : "RoleName",
+    "ParameterValue" : "var.smrole"
+  },
+  {
+    "ParameterKey" : "SubnetId",
+    "ParameterValue" : "var.subnet"
+  },
+  {
+    "ParameterKey" : "SecurityGroupIds",
+    "ParameterValue" : "var.sg"
+  },
+  {
+    "ParameterKey" : "VolumeSizeInGB",
+    "ParameterValue" : "5"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-sagemaker"
+  }
+]

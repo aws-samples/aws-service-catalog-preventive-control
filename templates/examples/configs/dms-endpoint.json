@@ -1,0 +1,42 @@
+[
+  {
+    "ParameterKey" : "EndpointIdentifier",
+    "ParameterValue" : "mydmsendpoint"
+  },
+  {
+    "ParameterKey" : "EndpointType",
+    "ParameterValue" : "source"
+  },
+  {
+    "ParameterKey" : "EngineName",
+    "ParameterValue" : "oracle"
+  },
+  {
+    "ParameterKey" : "DatabaseName",
+    "ParameterValue" : "mydb"
+  },
+  {
+    "ParameterKey" : "ServerName",
+    "ParameterValue" : "dbserver"
+  },
+  {
+    "ParameterKey" : "Port",
+    "ParameterValue" : "1521"
+  },
+  {
+    "ParameterKey" : "UserName",
+    "ParameterValue" : "root"
+  },
+  {
+    "ParameterKey" : "Password",
+    "ParameterValue" : "mypassword"
+  },
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-dms-endpoint"
+  }
+]

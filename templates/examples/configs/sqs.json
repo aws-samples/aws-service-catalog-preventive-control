@@ -1,0 +1,38 @@
+[
+  {
+    "ParameterKey" : "QueueName",
+    "ParameterValue" : "mytestq"
+  },
+  {
+    "ParameterKey" : "FifoQueue",
+    "ParameterValue" : "false"
+  },
+  {
+    "ParameterKey" : "ContentBasedDeduplication",
+    "ParameterValue" : "false"
+  },
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "MessageRetentionPeriod",
+    "ParameterValue" : "60"
+  },
+  {
+    "ParameterKey" : "DelaySeconds",
+    "ParameterValue" : "0"
+  },
+  {
+    "ParameterKey" : "ReceiveMessageWaitTimeSeconds",
+    "ParameterValue" : "0"
+  },
+  {
+    "ParameterKey" : "VisibilityTimeout",
+    "ParameterValue" : "30"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-sqs"
+  }
+]

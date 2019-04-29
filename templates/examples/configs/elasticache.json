@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey" : "ClusterName",
+    "ParameterValue" : "myclluster"
+  },
+  {
+    "ParameterKey" : "NodeType",
+    "ParameterValue" : "cache.t2.micro"
+  },
+  {
+    "ParameterKey" : "NumberClusters",
+    "ParameterValue" : "1"
+  },
+  {
+    "ParameterKey" : "CacheSubnetGroupName",
+    "ParameterValue" : "var.cachesubnet"
+  },
+  {
+    "ParameterKey" : "SecurityGroupIds",
+    "ParameterValue" : "var.sg"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-elasticache"
+  }
+]
