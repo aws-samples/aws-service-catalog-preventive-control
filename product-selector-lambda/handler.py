@@ -48,8 +48,8 @@ def lambda_handler(event, context):
         return event
 
     # get product name from CFN calling lambda
-    productName = 'sc-'+event['ResourceProperties']['ProductName']+'-product'
-    logger.info(f'Searching product: '+productName)
+    productName = f'sc-{event["ResourceProperties"]["ProductName"]}-product'
+    logger.info(f'Searching product: {productName}')
     # search product in AWS Service Catalog
     response = sc.search_products_as_admin(
         SortBy='Title',
@@ -84,52 +84,60 @@ def lambda_handler(event, context):
 
         # if version provided in cfn
         if 'Version' in event['ResourceProperties']:
+            logger.info(f'Searching version: {event["ResourceProperties"]["Version"]}')
             for a in prodArtif['ProvisioningArtifactDetails']:
                 # find artifact that match provided version
                 if a['Name'] == event['ResourceProperties']['Version']:
                     responsedata['ArtifactId'] = a['Id']
+
+            if not 'ArtifactId' in responsedata:
+                logger.info('Version not found')
+                responsedata['ArtifactId'] = 'Version not found'
+                cfnsend(event, context, 'FAILED', responsedata, 'Version not found in Service Catalog')
+                return event
         # otherwise return last one based on the date/time
         else:
             last_artifact_Id = max(prodArtif['ProvisioningArtifactDetails'],key=lambda item:item['CreatedTime'])
             responsedata['ArtifactId'] = last_artifact_Id['Id']
 
-        logger.info(f'Respond Product Id: '+responsedata['ProductId'])
-        logger.info(f'Respond Artifact Id: '+responsedata['ArtifactId'])
+        logger.info(f'Respond Product Id: {responsedata["ProductId"]}')
+        logger.info(f'Respond Artifact Id: {responsedata["ArtifactId"]}')
         # Return product info back to CFN
         cfnsend(event, context, 'SUCCESS', responsedata)
     else:
         # if product not found failed CFN
-        logger.info(f'Product Not Found')
-        responsedata['Id'] = 'Product not found'
+        logger.info('Product Not Found')
+        responsedata['Id']='Product not found'
         cfnsend(event, context, 'FAILED', responsedata, 'Product not found in Service Catalog')
 
     return event
 
 
 def cfnsend(event, context, responseStatus, responseData, reason=None):
-    responseUrl = event['ResponseURL']
-    # Build out the response json
-    responseBody = {}
-    responseBody['Status'] = responseStatus
-    responseBody['Reason'] = reason or 'CWL Log Stream =' + context.log_stream_name
-    responseBody['PhysicalResourceId'] = context.log_stream_name
-    responseBody['StackId'] = event['StackId']
-    responseBody['RequestId'] = event['RequestId']
-    responseBody['LogicalResourceId'] = event['LogicalResourceId']
-    responseBody['Data'] = responseData
-    json_responseBody = json.dumps(responseBody)
+    if 'ResponseURL' in event:
+        responseUrl = event['ResponseURL']
+        # Build out the response json
+        responseBody = {}
+        responseBody['Status'] = responseStatus
+        responseBody['Reason'] = reason or 'CWL Log Stream =' + context.log_stream_name
+        responseBody['PhysicalResourceId'] = context.log_stream_name
+        responseBody['StackId'] = event['StackId']
+        responseBody['RequestId'] = event['RequestId']
+        responseBody['LogicalResourceId'] = event['LogicalResourceId']
+        responseBody['Data'] = responseData
+        json_responseBody = json.dumps(responseBody)
 
-    logger.info(f'Response body: + {json_responseBody}')
+        logger.info(f'Response body: + {json_responseBody}')
 
-    headers = {
-        'content-type': '',
-        'content-length': str(len(json_responseBody))
-    }
-    # Send response back to CFN
-    try:
-        response = requests.put(responseUrl,
-                                data=json_responseBody,
-                                headers=headers)
-        logger.info(f'Status code: {response.reason}')
-    except Exception as e:
-        logger.info(f'send(..) failed executing requests.put(..):  + {str(e)}')
+        headers = {
+            'content-type': '',
+            'content-length': str(len(json_responseBody))
+        }
+        # Send response back to CFN
+        try:
+            response = requests.put(responseUrl,
+                                    data=json_responseBody,
+                                    headers=headers)
+            logger.info(f'Status code: {response.reason}')
+        except Exception as e:
+            logger.info(f'send(..) failed executing requests.put(..):  {str(e)}')
