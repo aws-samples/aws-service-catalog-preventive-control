@@ -31,13 +31,37 @@ logger.setLevel(logging.INFO)
 session = boto3.session.Session()
 region = session.region_name
 
+# Map the region to apppriate region filter
+REGION_MAP = {
+    'us-east-1': 'US East (N. Virginia)',
+    'us-east-2': 'US East (Ohio)',
+    'us-west-1':'US West (N. California)',
+    'us-west-2':'US West (Oregon)',
+    'us-gov-west-1': 'AWS GovCloud (US)',
+    'us-gov-east-1': 'AWS GovCloud (US-East)',
+    'ap-east-1': 'Asia Pacific (Hong Kong)',
+    'ap-south-1': 'Asia Pacific (Mumbai)',
+    'ap-northeast-3': 'Asia Pacific (Osaka-Local)',
+    'ap-northeast-2': 'Asia Pacific (Seoul)',
+    'ap-southeast-1': 'Asia Pacific (Singapore)',
+    'ap-southeast-2': 'Asia Pacific (Sydney)',
+    'ap-northeast-1': 'Asia Pacific (Tokyo)',
+    'ca-central-1': 'Canada (Central)',
+    'eu-central-1': 'EU (Frankfurt)',
+    'eu-west-1': 'EU (Ireland)',
+    'eu-west-2': 'EU (London)',
+    'eu-west-3': 'EU (Paris)',
+    'eu-north-1': 'EU (Stockholm)',
+    'sa-east-1': 'South America (Sao Paulo)'
+}
 
 #Class to search resources based on the specified criteria
 class ResourceSelector(object):
     def __init__(self, **kwargs):
         cfg = kwargs['cfg']
         resource = kwargs['resource']
-
+        # Last Error Message placeholder
+        self.errorMessage=''
         # Get current Region
         self.region = kwargs['region']
 
@@ -74,6 +98,18 @@ class ResourceSelector(object):
         # IAM Role path
         self.rolePath = (cfg['Options']['RolePath'] if 'Options' in cfg and 'RolePath' in cfg['Options']
                              else '/')
+        # Spot Price Instance Type
+        self.instanceType = (cfg['Options']['InstanceType'] if 'Options' in cfg and 'InstanceType' in cfg['Options']
+                             else None)
+        # Spot Price Instance OS
+        self.instanceOS = (cfg['Options']['InstanceOS'] if 'Options' in cfg and 'InstanceOS' in cfg['Options']
+                             else None)
+        # AMI Image Owner
+        self.imageOwner = (cfg['Options']['ImageOwner'] if 'Options' in cfg and 'ImageOwner' in cfg['Options']
+                             else None)
+        # AMI Image Name
+        self.imageName = (cfg['Options']['ImageName'] if 'Options' in cfg and 'ImageName' in cfg['Options']
+                             else None)
 
         # Get VPC(s) for subnets or security group
         vpcs = (kwargs['vpc'] if 'vpc' in kwargs else None)
@@ -102,6 +138,14 @@ class ResourceSelector(object):
         if resource == 'role':
             self.getRoles(cfg)
 
+        if resource == 'spot':
+            self.output = 'single'
+            self.getSpotPrice()
+
+        if resource == 'ami':
+            self.output = 'single'
+            self.getImage(cfg)
+
     # output search result
     def getOutput(self):
         return self.result
@@ -114,6 +158,39 @@ class ResourceSelector(object):
             Status = True
 
         return Status
+
+    # return last error message
+    def getLastError(self):
+        return self.errorMessage
+
+    # Get list of instance type supported by AWS Pricing API
+    def get_instances(self):
+        instances = []
+        client = boto3.client('pricing', region_name=self.region)
+        next_token = 'init'
+        while next_token != None:
+            if next_token == 'init':
+                response = client.get_attribute_values(
+                    ServiceCode='AmazonEC2',
+                    AttributeName='instanceType',
+                )
+            else:
+                response = client.get_attribute_values(
+                    ServiceCode='AmazonEC2',
+                    AttributeName='instanceType',
+                    NextToken = next_token,
+                )
+            instances += [k['Value'] for k in response['AttributeValues']]
+            next_token = response.get('NextToken', None)
+        return instances
+
+    # Check if provided instance is supported by AWS Pricing API
+    def valid_instance_type(self, instance):
+        valid_instance = False
+        for i in self.get_instances():
+            if instance == i:
+                return True
+        return valid_instance
 
     #Get VPCs based on the provided criteria in configuratiion
     def getVPCs(self, config):
@@ -324,6 +401,152 @@ class ResourceSelector(object):
         # turn list into a comma separated string and place it in our response
         self.setOutput(rolesArn)
 
+    def getSpotPrice(self):
+        spotPriceValue = []
+        if not self.instanceType:
+            logger.error("Error: InstanceType argument missing")
+            self.errorMessage = "InstanceType argument missing"
+            self.setOutput(spotPriceValue)
+            self.error = 'failed'
+            return None
+
+        if not self.valid_instance_type(self.instanceType):
+            logger.error("Error: Invalid Instance Type specified")
+            self.errorMessage = "Invalid Instance Type specified"
+            self.setOutput(spotPriceValue)
+            self.error = 'failed'
+            return None
+
+        #Check if instanceOS has been provided as an argument
+        if not self.instanceOS:
+            logger.error("Error: IntanceOS argument missing")
+            self.errorMessage = "IntanceOS argument missing"
+            self.setOutput(spotPriceValue)
+            self.error = 'failed'
+            return None
+
+        # Validate the value of instance OS
+        if self.instanceOS not in ("Linux", "Windows", "RHEL"):
+            logger.error("Error: Invalid InstanceOS value")
+            self.errorMessage = "Invalid InstanceOS value"
+            self.setOutput(spotPriceValue)
+            self.error = 'failed'
+            return None
+
+        # setup pricing connection
+        spot = boto3.client('pricing', region_name=self.region)
+
+        # get name of current region
+        region_filter = REGION_MAP.get(self.region)
+
+        if not region_filter:
+            logger.error("Error: Unsupported region")
+            self.errorMessage = "Unsupported region"
+            self.setOutput(spotPriceValue)
+            self.error = 'failed'
+            return None
+
+        # call for result with proper filters
+        result = spot.get_products(
+            ServiceCode='AmazonEC2', # specify the service name
+            Filters=[
+                    {
+                        'Type'  : 'TERM_MATCH',
+                        'Field' : 'instanceType',       # Filter on instance type
+                        'Value' : self.instanceType
+                    },
+                    {
+                        'Type'  : 'TERM_MATCH',
+                        'Field' : 'location',           # Filter on the region
+                        'Value' : region_filter
+                    },
+                    {
+                        'Type'  : 'TERM_MATCH',
+                        'Field' : 'operatingSystem',    # Filter on the operating system
+                        'Value' : self.instanceOS
+                    },
+                    {
+                        'Type'  : 'TERM_MATCH',
+                        'Field' : 'tenancy',            # Filter on tenancy
+                        'Value' : 'Shared'              # Value should always be 'Shared'
+                    },
+                    {
+                        'Type'  : 'TERM_MATCH',
+                        'Field' : 'preInstalledSw',     # Filter on the pre-installed software
+                        'Value' : 'NA'                  # Value should always be 'NA'
+                    },
+                    {
+                        'Type'  : 'TERM_MATCH',
+                        'Field' : 'licenseModel',       # Filter on the license model
+                        'Value' : 'No License required' # Value should always be 'No License required'
+                    },
+                    {
+                        "Type": "TERM_MATCH",
+                        "Field": "termType",
+                        "Value": "OnDemand"
+                    },
+                    {
+                        "Type": "TERM_MATCH",
+                        "Field": "capacitystatus",
+                        "Value": "UnusedCapacityReservation"
+                    }
+                ],
+            )['PriceList'] # Take the PriceList portion of the response [what we need]
+
+        result_object = json.loads(result[0])
+        on_demand = result_object['terms']['OnDemand'] # Traverse down to get OnDemand Price
+        on_demand = on_demand[list(on_demand.keys())[0]]['priceDimensions'] # Get the price Dimensions
+        on_demand = float(on_demand[list(on_demand.keys())[0]]['pricePerUnit']['USD']) # Get the US Dollar Amount
+        spotPrice = '{0:.3g}'.format(on_demand * 0.95)
+
+        # return spot price
+        if spotPrice:
+            logger.info(f'Spot Price value determined: {spotPrice}')
+            spotPriceValue.append(spotPrice)
+        else:
+            logger.error("Issue determining spot price.")
+
+        # turn list into a comma separated string and place it in our response
+        self.setOutput(spotPriceValue)
+
+    # Get AMI image id based on the provided criteria
+    def getImage(self, config):
+        images=[]
+        if not self.imageOwner:
+            logger.error("Error: ImageOwner argument missing")
+            self.errorMessage = "ImageOwner argument missing"
+            self.setOutput(images)
+            self.error = 'failed'
+            return None
+
+        ec2 = boto3.resource('ec2', region_name=self.region)
+        for image in ec2.images.filter(Owners=[self.imageOwner]):
+            # if image name criteria provided
+            if self.imageName:
+                # check if it match with current image
+                if image.name and self.imageName in image.name:
+                    #self.imageName in image.name:
+                    # if image has tags, check if it macth with tag criteria
+                    if image.tags:
+                        if self.searchObject(image.tags, config):
+                            images.append(image.id)
+                            break
+                    # if mo tag criteria provided, return image
+                    elif not 'Tags' in config:
+                        images.append(image.id)
+                        break
+            # if no image name provided in configuration, check tag criteria only
+            elif image.tags and self.searchObject(image.tags, config):
+                images.append(image.id)
+                break
+            # if image doens't have tags and no tags criteria specified in configuration, return first image
+            elif images.append(image.id) and not 'Tags' in config:
+                images.append(image.id)
+                break
+
+        # turn list into a comma separated string and place it in our response
+        self.setOutput(images)
+
     # depend on configuration either return first item from list
     # or all items converted to comma separated string
     def setOutput(self, resultList):
@@ -386,7 +609,8 @@ def lambda_handler(event, context):
     def checkStatus(resource, rs):
         if failed_on_error or not rs.getStatus():
             responsedata[resource] = 'Error: Resource {} not found'.format(resource)
-            logger.info(f'Response data: + {responsedata}')
+            responsedata['lastError'] = rs.getLastError()
+            logger.info(f'Response data: {responsedata}')
             # send failed status back to CFN
             cfnsend(event, context, 'FAILED', responsedata)
             return False
@@ -505,37 +729,64 @@ def lambda_handler(event, context):
             # destroy class
             del rs
 
+        # get Spot Price
+        if 'spot' in res_list:
+            # call resource selector class to get Spot Price for provided instance type and os
+            rs = ResourceSelector(region=region, resource='spot',cfg=event['ResourceProperties']['Resources']['spot'])
+            # output search result
+            responsedata['spotprice'] = rs.getOutput()
+            # if spot price not found, check if failed CFN
+            if not responsedata['spotprice'] and not checkStatus('spot', rs):
+                return responsedata
+            # destroy class
+            del rs
+
+        # get AMI Image Id based on the criteria
+        if 'ami' in res_list:
+            # call resource selector class to get AMI Image ID based on the criteria
+            rs = ResourceSelector(region=region, resource='ami',cfg=event['ResourceProperties']['Resources']['ami'])
+            # output search result
+            responsedata['ami'] = rs.getOutput()
+            # if image not found, check if failed CFN
+            if not responsedata['ami'] and not checkStatus('ami', rs):
+                return responsedata
+            # destroy class
+            del rs
+
     # Log response data
-    logger.info(f'Response data: + {responsedata}')
+    logger.info(f'Response data: {responsedata}')
 
     # Using the cfnsend function to format our response to Cloudforamtion and send it
     cfnsend(event, context, 'SUCCESS', responsedata)
     return responsedata
 
 def cfnsend(event, context, responseStatus, responseData, phyResId=None):
-    responseUrl = event['ResponseURL']
-    # Build out the response json
-    responseBody = {}
-    responseBody['Status'] = responseStatus
-    responseBody['Reason'] = 'CWL Log Stream =' + context.log_stream_name
-    responseBody['PhysicalResourceId'] = phyResId or context.log_stream_name
-    responseBody['StackId'] = event['StackId']
-    responseBody['RequestId'] = event['RequestId']
-    responseBody['LogicalResourceId'] = event['LogicalResourceId']
-    responseBody['Data'] = responseData
-    json_responseBody = json.dumps(responseBody)
 
-    logger.info(f'Response body: + {json_responseBody}')
+    # check if it's CFN custom resource call, or lambda incocation
+    if 'ResponseURL' in event:
+        responseUrl = event['ResponseURL']
+        # Build out the response json
+        responseBody = {}
+        responseBody['Status'] = responseStatus
+        responseBody['Reason'] = 'CWL Log Stream =' + context.log_stream_name
+        responseBody['PhysicalResourceId'] = phyResId or context.log_stream_name
+        responseBody['StackId'] = event['StackId']
+        responseBody['RequestId'] = event['RequestId']
+        responseBody['LogicalResourceId'] = event['LogicalResourceId']
+        responseBody['Data'] = responseData
+        json_responseBody = json.dumps(responseBody)
 
-    headers = {
-        'content-type': '',
-        'content-length': str(len(json_responseBody))
-    }
-    #Send response back to CFN
-    try:
-        response = requests.put(responseUrl,
-                                data=json_responseBody,
-                                headers=headers)
-        logger.info(f'Status code: {response.reason}')
-    except Exception as e:
-        logger.info(f'send(..) failed executing requests.put(..):  + {str(e)}')
+        logger.info(f'Response body: + {json_responseBody}')
+
+        headers = {
+            'content-type': '',
+            'content-length': str(len(json_responseBody))
+        }
+        #Send response back to CFN
+        try:
+            response = requests.put(responseUrl,
+                                    data=json_responseBody,
+                                    headers=headers)
+            logger.info(f'Status code: {response.reason}')
+        except Exception as e:
+            logger.info(f'send(..) failed executing requests.put(..): {str(e)}')
