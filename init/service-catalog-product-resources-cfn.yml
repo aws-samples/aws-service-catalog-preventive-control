@@ -31,6 +31,11 @@ Parameters:
   AccessRoleName:
     Description: Name of IAM Role that will have access to products in portfolio
     Type: String
+    Default: ''
+  AccessUserName:
+    Description: Name of IAM User that will have access to products in portfolio
+    Type: String
+    Default: ''
   DeploymentLambdaRoleName:
     Description: Deploymnet Lambda Function Role Name
     Type: String
@@ -46,6 +51,10 @@ Parameters:
   PipelineRoleName:
     Description: Pipeline Role Name
     Type: String
+
+Conditions:
+  HasAccessRole: !Not [!Equals [!Ref AccessRoleName, '']]
+  HasAccessUser: !Not [!Equals [!Ref AccessUserName, '']]
 
 Resources:
   PipelineRole:
@@ -237,6 +246,8 @@ Resources:
                 Action:
                   - sqs:TagQueue
                   - kms:DescribeKey
+                  - lambda:AddPermission
+                  - s3:PutBucketNotification
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -277,6 +288,9 @@ Resources:
                   - iam:ListRoles
                   - acm:ListCertificates
                   - acm:ListTagsForCertificate
+                  - pricing:DescribeServices
+                  - pricing:GetProducts
+                  - pricing:GetAttributeValues
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -325,8 +339,17 @@ Resources:
 
   PortfolioAccessRole:
     Type: "AWS::ServiceCatalog::PortfolioPrincipalAssociation"
+    Condition: HasAccessRole
     Properties:
       PrincipalARN: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AccessRoleName}'
+      PortfolioId: !Ref Portfolio
+      PrincipalType: IAM
+
+  PortfolioAccessUser:
+    Type: "AWS::ServiceCatalog::PortfolioPrincipalAssociation"
+    Condition: HasAccessUser
+    Properties:
+      PrincipalARN: !Sub 'arn:aws:iam::${AWS::AccountId}:user/${AccessUserName}'
       PortfolioId: !Ref Portfolio
       PrincipalType: IAM
 
