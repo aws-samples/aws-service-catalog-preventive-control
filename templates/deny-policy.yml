@@ -185,6 +185,12 @@ Resources:
               - "sqs:TagQueue"
               - "sqs:UntagQueue"
             Resource: "*"
+          -
+            Sid: "s3"
+            Effect: "Deny"
+            Action:
+              - "s3:CreateBucket"
+            Resource: "*"
 
 Outputs:
   DenyPolicyArn:
