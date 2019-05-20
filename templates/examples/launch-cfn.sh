@@ -110,20 +110,34 @@ do
   fi
 done
 
-printf "Deploying Service Catalog Products Test CFN\n"
+printf "Creating Service Catalog Products:\n"
+printf "DMS Enpoint\n"
 aws cloudformation create-stack --stack-name sc-dms-endpoint-cfn --template-body file://sc-provision-dms-endpoint-cft.yml --parameters file://parameters/dms-endpoint.json
+printf "DMS Replication Instance\n"
 aws cloudformation create-stack --stack-name sc-dms-instance-cf  --template-body file://sc-provision-dms-replication-instance-cft.yml --parameters file://parameters/dms-replication.json
+printf "DynamoDB\n"
 aws cloudformation create-stack --stack-name sc-dynamodb-cfn --template-body file://sc-provision-dynamodb-cft.yml --parameters file://parameters/dynamodb.json
+printf "EBS\n"
 aws cloudformation create-stack --stack-name sc-ebs-cfn --template-body file://sc-provision-ebs-cft.yml --parameters file://parameters/ebs.json
+printf "EFS\n"
 aws cloudformation create-stack --stack-name sc-efs-cfn --template-body file://sc-provision-efs-cft.yml --parameters file://parameters/efs.json
+printf "ElastiCache\n"
 aws cloudformation create-stack --stack-name sc-elasticache-cfn --template-body file://sc-provision-elasticache-cft.yml --parameters file://parameters/elasticache.json
+printf "ElasticSearch\n"
 aws cloudformation create-stack --stack-name sc-elasticsearch-cfn --template-body file://sc-provision-elasticsearch-cft.yml --parameters file://parameters/elasticsearch.json
 if [ $deployFSx = true ]
 then
+  printf "FSx\n"
   aws cloudformation create-stack --stack-name sc-fsx-cfn --template-body file://sc-provision-fsx-cft.yml --parameters file://parameters/fsx.json
 fi
+printf "Kinesis\n"
 aws cloudformation create-stack --stack-name sc-kinesis-cfn --template-body file://sc-provision-kinesis-cft.yml --parameters file://parameters/kinesis.json
+printf "Sagemaker\n"
 aws cloudformation create-stack --stack-name sc-sagemaker-cfn --template-body file://sc-provision-sagemaker-cft.yml --parameters file://parameters/sagemaker.json
+printf "SNS\n"
 aws cloudformation create-stack --stack-name sc-sns-cfn --template-body file://sc-provision-sns-cft.yml --parameters file://parameters/sns.json
+printf "SQS\n"
 aws cloudformation create-stack --stack-name sc-sqs-cfn --template-body file://sc-provision-sqs-cft.yml --parameters file://parameters/sqs.json
+printf "S3\n"
+aws cloudformation create-stack --stack-name sc-s3-cfn --template-body file://sc-provision-s3-cft.yml --parameters file://parameters/s3.json
 printf "Deployment Finish !!!\n"

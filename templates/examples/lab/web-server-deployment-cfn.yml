@@ -170,15 +170,15 @@ Resources:
     Properties:
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
       ProductName: elasticsearch
-
-  S3Bucket:
-    Type: AWS::S3::Bucket
+  ProductSelectorS3:
+    Type: "Custom::ProductSelector"
+    Version: "1.0"
     Properties:
-      BucketName: !Ref BucketName
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      ProductName: 's3'
 
   KinesisRole:
     Type: "AWS::IAM::Role"
-    DependsOn: S3Bucket
     Properties:
       RoleName: 'sc-lab-kinesis-role'
       AssumeRolePolicyDocument:
@@ -271,26 +271,10 @@ Resources:
             Effect: Allow
             Principal:
               AWS:
-                - !Join
-                  - ''
-                  - - 'arn:aws:iam::'
-                    - !Ref 'AWS::AccountId'
-                    - ':root'
-                - !Join
-                  - ''
-                  - - 'arn:aws:iam::'
-                    - !Ref 'AWS::AccountId'
-                    - ':role/sc-elasticsearch-product-role'
-                - !Join
-                  - ''
-                  - - 'arn:aws:iam::'
-                    - !Ref 'AWS::AccountId'
-                    - ':role/sc-sns-product-role'
-                - !Join
-                  - ''
-                  - - 'arn:aws:iam::'
-                    - !Ref 'AWS::AccountId'
-                    - ':role/sc-asc-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-elasticsearch-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-sns-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-autoscaling-product-role'
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling'
                 - !GetAtt KinesisRole.Arn
             Action: 'kms:*'
@@ -306,22 +290,35 @@ Resources:
       AliasName: alias/sc-lab-key
       TargetKeyId: !Ref LabKMSKey
 
-  Kinesis:
-    Type: AWS::KinesisFirehose::DeliveryStream
+  S3Bucket:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
     DependsOn: LabKMSKey
     Properties:
-      DeliveryStreamName: sc-lab-kinesis-fh-stream
-      DeliveryStreamType: DirectPut
-      S3DestinationConfiguration:
-        BucketARN: !GetAtt S3Bucket.Arn
-        RoleARN: !GetAtt  KinesisRole.Arn
-        EncryptionConfiguration:
-          KMSEncryptionConfig:
-            AWSKMSKeyARN: !GetAtt LabKMSKey.Arn
-        BufferingHints:
-          IntervalInSeconds: 60
-          SizeInMBs: 2
-        CompressionFormat: GZIP
+      ProvisionedProductName: 'sc-lab-s3'
+      ProvisioningParameters:
+        - Key: BucketName
+          Value: !Ref BucketName
+        - Key: KMSId
+          Value: !Ref LabKMSKey
+      ProductId: !GetAtt ProductSelectorS3.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelectorS3.ArtifactId
+
+  Kinesis:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: S3Bucket
+    Properties:
+      Parameters:
+        KinesisRole: !GetAtt  KinesisRole.Arn
+        KMSEncryptionKeyArn: !GetAtt LabKMSKey.Arn
+        S3StackName: !Select [1, !Split ['/', !Select [5, !Split [':', !GetAtt S3Bucket.CloudformationStackArn ]]]]
+      Tags:
+        -
+          Key: "LAB:Object"
+          Value: "sc-lab-kinesis-cfn"
+        -
+          Key: "LAB:Env"
+          Value: "sc-lab"
+      TemplateURL: https://s3.amazonaws.com/aws-service-catalog-reference-architectures/preventive-control/kinesis-deployment-cfn.yml
 
   SNS:
     Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"

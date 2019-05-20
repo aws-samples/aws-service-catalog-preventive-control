@@ -14,6 +14,7 @@
 # * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
 Description: Service Catalog Lab - Lambdas
 Parameters:
   DeploymentLambdaFunctionName:
@@ -31,25 +32,47 @@ Parameters:
   ResourceComplianceLambdaRoleName:
     Description: Resource Compliance Lambda Function Role Name
     Type: String
+  DeploymentBucketName:
+    Description: S3 Bucket Name
+    Type: String
+  DeploymentConfigSuffix:
+    Description: Deployment Configuration file suffix e.g. deployer
+    Type: String
 
 Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DeploymentBucketName
+      AccessControl: BucketOwnerFullControl
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        -
+          Key: "LAB:Object"
+          Value: "sc-lab-deployment-bucket"
+        -
+          Key: "LAB:Env"
+          Value: "sc-lab"
   DeploymentLambdaFunction:
     Type: "AWS::Lambda::Function"
+    DependsOn: S3Bucket
     Properties:
       FunctionName: !Ref DeploymentLambdaFunctionName
       Handler: handler.lambda_handler
-      Runtime: python2.7
-      ReservedConcurrentExecutions: 30
+      Runtime: python3.6
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${DeploymentLambdaRoleName}'
       Timeout: 20
-      Environment:
-        Variables:
-          cfnUrl: 'aws-service-catalog-reference-architectures/preventive-control/deployment-cfn/sc-product-deployment.yml'
       Code:
         S3Bucket: aws-service-catalog-reference-architectures
         S3Key: preventive-control/deployment-lambda.zip
+      Environment:
+        Variables:
+          cfnUrl: 'aws-service-catalog-reference-architectures/preventive-control/deployment-cfn/sc-product-deployment.yml'
+
   ProductSelectorLambdaFunction:
     Type: "AWS::Lambda::Function"
+    DependsOn: DeploymentLambdaFunction
     Properties:
       FunctionName: sc-product-selector
       Handler: handler.lambda_handler
@@ -61,6 +84,7 @@ Resources:
         S3Key: preventive-control/product-selector-lambda.zip
   ResourceSelectorLambdaFunction:
     Type: "AWS::Lambda::Function"
+    DependsOn: ProductSelectorLambdaFunction
     Properties:
       FunctionName: sc-resource-selector
       Handler: handler.lambda_handler
@@ -72,6 +96,7 @@ Resources:
         S3Key: preventive-control/resource-selector-lambda.zip
   ResourceComplianceLambdaFunction:
     Type: "AWS::Lambda::Function"
+    DependsOn: ResourceSelectorLambdaFunction
     Properties:
       FunctionName: sc-resource-compliance
       Handler: handler.lambda_handler
@@ -90,3 +115,7 @@ Outputs:
     Value: !GetAtt ResourceSelectorLambdaFunction.Arn
   ResourceComplianceLambdaArn:
     Value: !GetAtt ResourceComplianceLambdaFunction.Arn
+  BucketArn:
+    Value: !GetAtt S3Bucket.Arn
+  BucketName:
+    Value: !Ref S3Bucket

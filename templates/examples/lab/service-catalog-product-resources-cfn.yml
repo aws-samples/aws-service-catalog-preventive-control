@@ -46,7 +46,7 @@ Parameters:
   PipelineRoleName:
     Description: Pipeline Role Name
     Type: String
-    
+
 Resources:
   PipelineRole:
     Type: 'AWS::IAM::Role'
@@ -238,6 +238,8 @@ Resources:
                 Action:
                   - sqs:TagQueue
                   - kms:DescribeKey
+                  - lambda:AddPermission
+                  - s3:PutBucketNotification                  
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents

@@ -25,7 +25,7 @@
 # Domain Name of SSL Cert import to ACM
 domain_name="www.example.com"
 # list of product to deploy to Service Catalog
-products_to_deploy=(sns elasticsearch ebs autoscaling alb albtarget alblistener)
+products_to_deploy=(sns elasticsearch ebs autoscaling alb albtarget alblistener s3)
 
 # Variable and function to validate if products were deploy to AWS Service Catalog
 deploymentStarted=false
@@ -49,15 +49,14 @@ validate_products_deployment()
 printf "Read Deployment Variables\n"
 # Get Resources Deployment CFN STack Name
 resources_cfn_stack_name=$(aws cloudformation describe-stacks --query 'Stacks[?Tags[?Key==`LAB:Object` && Value==`sc-lab-resource-cfn`][]].StackName' --output text)
-# Get Deplloyment bucket name
-s3_bucket_arn=$(aws cloudformation describe-stacks --query 'Stacks[?Tags[?Key==`LAB:Object` && Value==`sc-lab-bucket-cfn`][]].Outputs[0].OutputValue' --output text)
-deployment_s3_bucket_name=${s3_bucket_arn/arn:aws:s3:::/}
+# Get Deployment S3 Bucket name
+deployment_s3_bucket_name=$(aws cloudformation describe-stacks --query 'Stacks[?Tags[?Key==`LAB:Object` && Value==`sc-lab-lambdas-cfn`][]].Outputs[]' | jq --raw-output '.[] | select(.OutputKey == "BucketName").OutputValue')
 # Get Service Catalog IAM policy name
 sc_product_policy_name=$(aws cloudformation describe-stacks --query 'Stacks[?Tags[?Key==`LAB:Object` && Value==`sc-lab-resource-cfn`][]].Parameters[]' | jq --raw-output '.[] | select(.ParameterKey == "PolicyName").ParameterValue')
 
 if [[ -z $1 ]]
 then
-  printf "Generate and Import Sellf-Sign SSL Certificate to ACM\n"
+  printf "Generate and Import Self-Sign SSL Certificate to ACM\n"
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certificate.key -out certificate.crt -subj "/C=US/ST=MA/L=Boston/O=Company/OU=IT/CN=$domain_name"
   certArn=$(aws acm import-certificate --certificate file://./certificate.crt --private-key file://./certificate.key --query 'CertificateArn' --output text)
   aws acm add-tags-to-certificate --certificate-arn $certArn --tags Key=Name,Value=sc-lab Key=Env,Value=lab
@@ -93,7 +92,7 @@ do
   aws s3 cp products-config/sc-product-$i.deployer s3://$deployment_s3_bucket_name/deployment-cfg/sc-product-$i.deployer
 done
 
-printf "Waiting for Prodcuts to be deploy ...\n"
+printf "Waiting for Products to be deploy ...\n"
 sleep 60
 
 printf "Validate Products deployment...\n"

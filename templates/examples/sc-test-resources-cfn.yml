@@ -100,6 +100,7 @@ Resources:
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-sns-product-role'
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-sqs-product-role'
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-sagemaker-product-role'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/sc-s3-product-role'
             Action: "kms:*"
             Resource: "*"
 

@@ -18,7 +18,7 @@
 # */
 
 # list of product to delete from Service Catalog
-products_to_deploy=(sns elasticsearch ebs autoscaling alb albtarget alblistener)
+products_to_deploy=(sns elasticsearch ebs autoscaling alb albtarget alblistener s3)
 # Domain Name to remove from ACM
 domainName='www.example.com'
 

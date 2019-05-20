@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey" : "Tags",
+    "ParameterValue" : "name=bucket,environment=test"
+  },
+  {
+    "ParameterKey" : "KMSId",
+    "ParameterValue" : "var.kms"
+  },
+  {
+    "ParameterKey" : "ProvisionedApplicationName",
+    "ParameterValue" : "sc-s3"
+  }
+]

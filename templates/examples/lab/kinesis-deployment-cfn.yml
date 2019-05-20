@@ -19,7 +19,7 @@ Parameters:
   KinesisRole:
     Description: Kinesis IAM Role Arn
     Type: String
-  S3BucketArn:
+  S3StackName:
     Description: Arn of S3 bucket to store failed documents
     Type: String
   KMSEncryptionKeyArn:
@@ -33,7 +33,9 @@ Resources:
       DeliveryStreamName: sc-lab-kinesis-fh-stream
       DeliveryStreamType: DirectPut
       S3DestinationConfiguration:
-        BucketARN: !Ref S3BucketArn
+        BucketARN:
+          Fn::ImportValue:
+            !Sub "${S3StackName}-S3BucketArn"          
         RoleARN: !Ref KinesisRole
         EncryptionConfiguration:
           KMSEncryptionConfig:

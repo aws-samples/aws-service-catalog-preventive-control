@@ -31,6 +31,7 @@ aws cloudformation delete-stack --stack-name sc-kinesis-cfn
 aws cloudformation delete-stack --stack-name sc-sagemaker-cfn
 aws cloudformation delete-stack --stack-name sc-sns-cfn
 aws cloudformation delete-stack --stack-name sc-sqs-cfn
+aws cloudformation delete-stack --stack-name sc-s3-cfn
 
 # Wait 5 minutes for ElasticSearch and ELastiCache termination
 sleep 300

@@ -58,7 +58,7 @@ Parameters:
   DeploymentLambdaFunctionName:
     Description: Service Catalog Product Policy Name
     Type: String
-    Default: 'sc-product-deployment-lambda'
+    Default: 'sc-product-deployment'
   DeploymentConfigSuffix:
     Description: Deployment Configuration file suffix e.g. deployer
     Type: String
@@ -86,11 +86,32 @@ Resources:
         -
           Key: "LAB:Env"
           Value: "sc-lab"
-      TemplateURL: https://s3.amazonaws.com/service-catalog-lab/service-catalog-product-resources-cfn.yml
-  SCNetworks:
+      TemplateURL: https://s3.amazonaws.com/aws-service-catalog-reference-architectures/preventive-control/service-catalog-product-resources-cfn.yml
+
+  SCLambdas:
     Type: AWS::CloudFormation::Stack
     DependsOn: SCResources
-    DependsOn: SCResources
+    Properties:
+      Parameters:
+        DeploymentLambdaFunctionName: !Ref DeploymentLambdaFunctionName
+        DeploymentLambdaRoleName: !Ref DeploymentLambdaRoleName
+        ProductSelectorLambdaRoleName: !Ref ProductSelectorLambdaRoleName
+        ResourceSelectorLambdaRoleName: !Ref ResourceSelectorLambdaRoleName
+        ResourceComplianceLambdaRoleName: !Ref ResourceComplianceLambdaRoleName
+        DeploymentBucketName: !Ref DeploymentBucketName
+        DeploymentConfigSuffix: !Ref DeploymentConfigSuffix
+      Tags:
+        -
+          Key: "LAB:Object"
+          Value: "sc-lab-lambdas-cfn"
+        -
+          Key: "LAB:Env"
+          Value: "sc-lab"
+      TemplateURL: https://s3.amazonaws.com/aws-service-catalog-reference-architectures/preventive-control/service-catalog-lambdas-cfn.yml
+
+  SCNetworks:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: SCLambdas
     Properties:
       Tags:
         -
@@ -99,38 +120,20 @@ Resources:
         -
           Key: "LAB:Env"
           Value: "sc-lab"
-      TemplateURL: https://s3.amazonaws.com/service-catalog-lab/service-catalog-networks-cfn.yml
-  SCLambdas:
-    Type: AWS::CloudFormation::Stack
+      TemplateURL: https://s3.amazonaws.com/aws-service-catalog-reference-architectures/preventive-control/service-catalog-networks-cfn.yml
+
+  S3Notification:
+    Type: "Custom::ResourceCompliance"
     DependsOn: SCNetworks
+    Version: "1.0"
     Properties:
-      Parameters:
-        DeploymentLambdaFunctionName: !Ref DeploymentLambdaFunctionName
-        DeploymentLambdaRoleName: !Ref DeploymentLambdaRoleName
-        ProductSelectorLambdaRoleName: !Ref ProductSelectorLambdaRoleName
-        ResourceSelectorLambdaRoleName: !Ref ResourceSelectorLambdaRoleName
-        ResourceComplianceLambdaRoleName: !Ref ResourceComplianceLambdaRoleName
-      Tags:
-        -
-          Key: "LAB:Object"
-          Value: "sc-lab-lambdas-cfn"
-        -
-          Key: "LAB:Env"
-          Value: "sc-lab"
-      TemplateURL: https://s3.amazonaws.com/service-catalog-lab/service-catalog-lambdas-cfn.yml
-  SCBucket:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: SCLambdas
-    Properties:
-      Parameters:
-        DeploymentBucketName: !Ref DeploymentBucketName
-        LambdaArn: !GetAtt SCLambdas.Outputs.DeploymentLambdaArn
-        DeploymentConfigSuffix: !Ref DeploymentConfigSuffix
-      Tags:
-        -
-          Key: "LAB:Object"
-          Value: "sc-lab-bucket-cfn"
-        -
-          Key: "LAB:Env"
-          Value: "sc-lab"
-      TemplateURL: https://s3.amazonaws.com/service-catalog-lab/service-catalog-s3-deployment-bucket-cfn.yml
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-resource-compliance'
+      Action:
+        Name: S3Notification
+        Parameters:
+          Bucket: !Ref DeploymentBucketName
+          Lambda: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DeploymentLambdaFunctionName}'
+          FilterRules:
+            -
+              Name: suffix
+              Value: !Ref DeploymentConfigSuffix
