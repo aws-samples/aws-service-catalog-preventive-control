@@ -34,6 +34,8 @@ responsedata = {}
 requireTags = []
 
 def lambda_handler(event, context):
+    # get account id
+    account_id = context.invoked_function_arn.split(":")[4]
     # Need to make sure we don't waste time if the request type is
     # update or delete.  Exit gracefully
     if event['RequestType'] == "Delete":
@@ -147,6 +149,7 @@ def lambda_handler(event, context):
                         FunctionName=lambda_arn,
                         Principal='s3.amazonaws.com',
                         SourceArn='arn:aws:s3:::'+bucket_name,
+                        SourceAccount=account_id,
                         StatementId=str(uuid.uuid4())
                     )
                     bucket_notification = s3.BucketNotification(bucket_name)
