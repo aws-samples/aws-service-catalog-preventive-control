@@ -18,40 +18,59 @@ Parameters:
   BucketName:
     Description: S3 Bucket Name
     Type: String
-  LambdaArn:
-    Description: Deployer Lambda Arn
+
+  BaselineFunctionRoleName:
+    Description: Name of the role that will be use for Baseline Function
     Type: String
-  DeploymentConfigSuffix:
-    Description: Deployment Configuration file suffix e.g. deployer
-    Type: String
+    Default: control-tower-baseline-lambda-role
+
+  OrganizationId:
+    Description: AWS OrganizationId
+    Type: String    
+    Default: ''
+
+Conditions:
+  AddBucketPolicy: !Not [!Equals [!Ref OrganizationId, '']]
 
 Resources:
-  PermissionForS3ToInvokeMyLambda:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref LambdaArn
-      Principal: 's3.amazonaws.com'
-      SourceArn: !Sub 'arn:aws:s3:::${BucketName}'
+
   S3Bucket:
-    DependsOn: PermissionForS3ToInvokeMyLambda
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref BucketName
       AccessControl: BucketOwnerFullControl
       VersioningConfiguration:
         Status: Enabled
-      NotificationConfiguration:
-        LambdaConfigurations:
-        -
-          Function: !Ref LambdaArn
-          Event: "s3:ObjectCreated:*"
-          Filter:
-            S3Key:
-              Rules:
-                -
-                  Name: suffix
-                  Value: !Ref DeploymentConfigSuffix
+
+  BucketPolicy: 
+    Type: AWS::S3::BucketPolicy
+    Condition: AddBucketPolicy
+    Properties: 
+      Bucket: 
+        Ref: S3Bucket
+      PolicyDocument: 
+        Statement: 
+          - 
+            Action: 
+              - "s3:GetObject"
+            Effect: "Allow"
+            Resource: 
+              Fn::Join: 
+                - ""
+                - 
+                  - "arn:aws:s3:::"
+                  - 
+                    Ref: S3Bucket
+                  - "/*"
+            Principal: 
+              AWS: "*"
+            Condition: 
+              StringLike: 
+                aws:PrincipalArn: 
+                  - arn:aws:iam::*:role/AWSControlTowerExecution
+                  - !Sub 'arn:aws:iam::*:role/${BaselineFunctionRoleName}'
+              StringEquals:
+                aws:PrincipalOrgID: !Ref OrganizationId
 
 Outputs:
   BucketArn:

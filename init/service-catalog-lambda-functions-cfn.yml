@@ -1,0 +1,368 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Service Catalog Lambda Functions
+Parameters:
+  DeploymentBucketName:
+    Description: Name of S3 Deploymenbt Bucket
+    Type: String
+  DeploymentFunctionName:
+    Description: Deployment Lambda Function Name
+    Type: String
+    Default: sc-product-deployment
+  CreateDeploymentFunction:
+    Description: Do you want to create Deployment Lambda True|False
+    Type: String 
+    Default: false
+    AllowedValues:
+    - true
+    - false  
+  DeploymentLambdaRoleName:
+    Description: Deploymnet Lambda Function Role Name
+    Type: String
+    Default: sc-product-deployment-lambda-role
+  ProductSelectorLambdaRoleName:
+    Description: Product Selector Lambda Function Role Name
+    Type: String
+    Default: sc-product-selector-lambda-role
+  ResourceComplianceLambdaRoleName:
+    Description: Resource Compliance Lambda Function Role Name
+    Type: String
+    Default: sc-resource-compliance-lambda-role
+  ResourceSelectorLambdaRoleName:
+    Description: Resource Selector Lambda Function Role Name
+    Type: String
+    Default: sc-resource-selector-lambda-role
+  PipelineRoleName:
+    Description: Pipeline Role Name
+    Type: String 
+    Default: sc-product-update-codepipeline-role"   
+
+Conditions:
+  CreateDeploymentLambda: !Equals [!Ref CreateDeploymentFunction, 'true']
+
+Resources:
+  PipelineRole:
+    Condition: CreateDeploymentLambda
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref PipelineRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "CodePipeline"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                 - !Sub 'arn:aws:s3:::${DeploymentBucketName}/*'
+                 - !Sub 'arn:aws:s3:::${DeploymentBucketName}'
+              -
+                Effect: "Allow"
+                Action:
+                  - servicecatalog:ListProvisioningArtifacts
+                  - servicecatalog:CreateProvisioningArtifact
+                  - servicecatalog:DescribeProvisioningArtifact
+                  - servicecatalog:DeleteProvisioningArtifact
+                  - servicecatalog:UpdateProduct
+                Resource: "*"
+              -
+                Effect: "Allow"
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
+                Resource: "*"
+              -
+                Effect: "Allow"
+                Action:
+                  - codepipeline:CreatePipeline
+                  - codepipeline:DeletePipeline
+                Resource: "*"
+              -
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: "cloudformation.amazonaws.com"
+
+  DeploymentLambdaRole:
+    Condition: CreateDeploymentLambda
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref DeploymentLambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "Lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                 - !Sub 'arn:aws:s3:::${DeploymentBucketName}/*'
+              -
+                Effect: "Allow"
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:ValidateTemplate
+                  - servicecatalog:*
+                  - codepipeline:GetPipeline
+                  - codepipeline:CreatePipeline
+                  - codepipeline:DeletePipeline
+                  - codepipeline:GetPipelineState
+                  - iam:GetRole
+                  - iam:CreateRole
+                  - iam:PutRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:DeleteRole
+                  - iam:DeleteRolePolicy
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+              -
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: "servicecatalog.amazonaws.com"
+              -
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !GetAtt PipelineRole.Arn
+
+  ProductSelectorLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref ProductSelectorLambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "Lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                 - !Sub 'arn:aws:s3:::${DeploymentBucketName}/*'
+              -
+                Effect: "Allow"
+                Action:
+                  - servicecatalog:ListProvisioningArtifacts
+                  - servicecatalog:SearchProductsAsAdmin
+                  - servicecatalog:SearchProducts
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  ResourceComplianceLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref ResourceComplianceLambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "Lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - sqs:TagQueue
+                  - kms:DescribeKey
+                  - lambda:AddPermission
+                  - s3:PutBucketNotification
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  ResourceSelectorLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref ResourceSelectorLambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "Lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeImages
+                  - kms:ListAliases
+                  - kms:ListKeys
+                  - kms:DescribeKey
+                  - iam:ListRoleTags
+                  - iam:ListPolicies
+                  - iam:ListRoles
+                  - acm:ListCertificates
+                  - acm:ListTagsForCertificate
+                  - pricing:DescribeServices
+                  - pricing:GetProducts
+                  - pricing:GetAttributeValues
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  DeploymentFunction: 
+    Type: AWS::Lambda::Function
+    Condition: CreateDeploymentLambda
+    Properties: 
+      FunctionName: !Ref DeploymentFunctionName
+      Handler: handler.lambda_handler 
+      Role: !GetAtt DeploymentLambdaRole.Arn
+      Environment:
+        Variables:
+          cfnUrl: !Sub '${DeploymentBucketName}/deployment-cfn/sc-product-deployment.yml'
+          PipelineRole: !Ref PipelineRoleName
+      Code: 
+        S3Bucket: !Ref DeploymentBucketName
+        S3Key: share-code/deployment-lambda.zip
+      Runtime: python2.7
+      Timeout: 20
+      ReservedConcurrentExecutions: 30
+
+  PermissionForS3ToInvokeLambda:
+    Type: 'AWS::Lambda::Permission'
+    Condition: CreateDeploymentLambda
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref DeploymentFunction
+      Principal: 's3.amazonaws.com'
+      SourceArn: !Sub 'arn:aws:s3:::${DeploymentBucketName}'
+      SourceAccount: !Ref "AWS::AccountId"
+
+  ProductSelectorFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      FunctionName: sc-product-selector
+      Handler: handler.lambda_handler 
+      Role: !GetAtt ProductSelectorLambdaRole.Arn
+      Code: 
+        S3Bucket: !Ref DeploymentBucketName
+        S3Key: share-code/product-selector-lambda.zip 
+      Runtime: python3.6
+      Timeout: 20
+
+  ResourceSelectorFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      FunctionName: sc-resource-selector 
+      Handler: handler.lambda_handler 
+      Role: !GetAtt ResourceSelectorLambdaRole.Arn
+      Code: 
+        S3Bucket: !Ref DeploymentBucketName
+        S3Key: share-code/resource-selector-lambda.zip 
+      Runtime: python3.6
+      Timeout: 300
+      MemorySize: 1024
+      
+  ResourceComplianceFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      FunctionName: sc-resource-compliance
+      Handler: handler.lambda_handler 
+      Role: !GetAtt ResourceComplianceLambdaRole.Arn
+      Code: 
+        S3Bucket: !Ref DeploymentBucketName
+        S3Key: share-code/resource-compliance-lambda.zip
+      Runtime: python3.6
+      Timeout: 300
+
+Outputs:
+  DeploymentFunctionArn:
+    Condition: CreateDeploymentLambda
+    Value: !GetAtt DeploymentFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-DeploymentFunction
