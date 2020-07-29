@@ -1,0 +1,89 @@
+{
+  "Parameters" : {
+    "PorfolioStack" : "var.portfolioCfn",
+    "ProductName" : "mq",
+    "ProductDescription" : "MQ",
+    "ProductVersion" : "1.0",
+    "ProductVersionDescription" : "Initial Version",
+    "ProductTemplateUrl" : "var.deploymentBucket/products/mq/sc-mq.yml",
+    "ProductRoleName" : "sc-mq-product-role",
+    "ProductPolicyName" : "var.policy",
+    "ProductRoleTemplateUrl" : "var.deploymentBucket/products/mq/sc-mq-products-role.yml",
+    "TemplateRuleConstraint" : {
+      "DeploymentMode": {
+        "RuleCondition": {
+          "Fn::Equals": [
+            {
+              "Ref":"DeploymentMode"
+            }, 
+            "ACTIVE_STANDBY_MULTI_AZ"
+          ]
+        },
+        "Assertions": [
+          {
+            "Assert": { 
+              "Fn::Contains": [
+                [ 
+                  "EFS" 
+                ], 
+                {
+                  "Ref": "StorageType"
+                }
+              ]
+            }, 
+            "AssertDescription": "Multi AZ Deployment supports only EFS storage"
+          }
+        ]
+      }, 
+      "Broker Instance": {
+        "RuleCondition": {
+          "Fn::Equals": [
+            {
+              "Ref":"HostInstanceType"
+            }, 
+            "mq.t2.micro"
+          ]
+        },
+        "Assertions": [
+          {
+            "Assert": { 
+              "Fn::Contains": [
+                [
+                  "EFS"
+                ], 
+                {
+                  "Ref": "StorageType"
+                }
+              ]
+            }, 
+            "AssertDescription": "Storage type ebs does not support broker instance type mq.t2.micro"
+          }
+        ]
+      }, 
+      "HostInstanceType": {
+        "Assertions": [
+          {
+            "Assert": {
+              "Fn::Contains": [
+                [
+                  "mq.t2.micro", 
+                  "mq.m5.large", 
+                  "mq.m5.xlarge",
+                  "mq.m5.2xlarge", 
+                  "mq.m5.4xlarge"
+                ], 
+                {
+                  "Ref": "HostInstanceType"
+                }
+              ]
+            }, 
+            "AssertDescription": "MQ Host Instance Type"
+          }
+        ]
+      }
+    },
+    "DeploymentBucket" : "var.deploymentBucket",
+    "DeployUpdatePipeline":"true",
+    "UpdateConfigFileName": "sc-mq-update"
+  }
+}

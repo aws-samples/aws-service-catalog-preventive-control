@@ -1,0 +1,17 @@
+{
+  "Parameters" : {
+    "PorfolioStack" : "var.portfolioCfn",
+    "ProductName" : "governance-lambda-roles",
+    "ProductDescription" : "Governance Lambda Roles",
+    "ProductVersion" : "1.0",
+    "ProductVersionDescription" : "Initial Version",
+    "ProductTemplateUrl" : "var.deploymentBucket/products/governance-lambda-roles/sc-governance-lambda-roles.yml",
+    "ProductRoleName" : "sc-governance-lambda-roles-product-role",
+    "ProductPolicyName" : "var.policy",
+    "ProductRoleTemplateUrl" : "var.deploymentBucket/products/governance-lambda-roles/sc-governance-lambda-roles-products-role.yml",
+    "TemplateRuleConstraint" : "",
+    "DeploymentBucket" : "var.deploymentBucket",
+    "DeployUpdatePipeline":"true",
+    "UpdateConfigFileName": "sc-governance-lambda-roles-update"
+  }
+}

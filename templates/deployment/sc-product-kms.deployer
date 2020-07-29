@@ -1,0 +1,17 @@
+{
+  "Parameters" : {
+    "PorfolioStack" : "var.portfolioCfn",
+    "ProductName" : "kms",
+    "ProductDescription" : "KMS",
+    "ProductVersion" : "1.0",
+    "ProductVersionDescription" : "Initial Version",
+    "ProductTemplateUrl" : "var.deploymentBucket/products/kms/sc-kms.yml",
+    "ProductRoleName" : "sc-kms-product-role",
+    "ProductPolicyName" : "var.policy",
+    "ProductRoleTemplateUrl" : "var.deploymentBucket/products/kms/sc-kms-products-role.yml",
+    "TemplateRuleConstraint" : "",
+    "DeploymentBucket" : "var.deploymentBucket",
+    "DeployUpdatePipeline":"true",
+    "UpdateConfigFileName": "sc-kms-update"
+  }
+}
