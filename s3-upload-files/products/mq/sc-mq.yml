@@ -1,0 +1,172 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Service Catalog MQ Product
+Parameters:
+  Name:
+    Description: MQ Broker Name
+    Type: String
+  KMS:
+    Description: KMS Encryption Key Id
+    Type: String
+  DeploymentMode:
+    Description: The deployment mode of the broker.
+    Type: String  
+    AllowedValues: 
+      - SINGLE_INSTANCE
+      - ACTIVE_STANDBY_MULTI_AZ
+  HostInstanceType:
+    Description: The broker's instance type
+    Type: String
+    Default: mq.t2.micro 
+  AuditLog:
+    Description: 'Enables audit logging'
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false   
+  StorageType:
+    Description: 'The broker storage type'
+    Type: String
+    AllowedValues:
+      - EFS
+      - EBS      
+  Data:
+    Description: Broker base64-encoded XML configuration.
+    Type: String
+    Default: ''   
+  SubnetIds:
+    Description: VPC Subnets Ids as comma separated list
+    Type: CommaDelimitedList
+  SecurityGroupIds:
+    Description: VPC Security Groups Ids as comma separated list
+    Type: CommaDelimitedList                
+  Tags:
+    Description: The tags to be applied to the resource.
+    Type: String
+    Default: ''    
+  Username:
+    Description: MQ Username.
+    Type: String
+    NoEcho: true  
+  Password:
+    Description: MQ Password.
+    Type: String
+    NoEcho: true  
+  ConsoleAccess:
+    Description: 'User Console Access'
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false  
+
+Conditions:
+  HasTags: !Not [!Equals [!Ref Tags, '']]
+  HasData: !Not [!Equals [!Ref Data, '']]
+  MultiAZ: !Equals [!Ref DeploymentMode, 'ACTIVE_STANDBY_MULTI_AZ']
+
+Resources:
+  GetTags:
+    Type: "Custom::ResourceCompliance"
+    Condition : HasTags
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-resource-compliance'
+      Action:
+        Name: json
+        Parameters:
+          JSON: !Ref Tags
+          Type: Tags
+
+  MQCFG:            
+    Type: AWS::AmazonMQ::Configuration
+    Condition: HasData
+    Properties: 
+      Data: !Ref Data
+      Description: 'Broker Configuration'
+      EngineType: ACTIVEMQ
+      EngineVersion: 5.15.10
+      Name: !Ref Name
+      Tags: !If [HasTags, !GetAtt GetTags.Json, !Ref "AWS::NoValue"]
+
+  MQ:
+    Type: AWS::AmazonMQ::Broker
+    Properties: 
+      AutoMinorVersionUpgrade: false
+      BrokerName: !Ref Name
+      DeploymentMode: !Ref DeploymentMode
+      EncryptionOptions: 
+        KmsKeyId: !Ref KMS
+        UseAwsOwnedKey: false
+      EngineType: ACTIVEMQ
+      EngineVersion: 5.15.10
+      HostInstanceType: !Ref HostInstanceType
+      Configuration: 
+        !If 
+          - HasData
+          -
+            Id: !Ref MQCFG
+            Revision: !GetAtt MQCFG.Revision 
+          - !Ref "AWS::NoValue"    
+      Logs: 
+        Audit: !Ref AuditLog
+        General: true
+      PubliclyAccessible: false
+      SecurityGroups: !Ref SecurityGroupIds
+      StorageType: !Ref StorageType
+      SubnetIds:
+        - !Select [0, !Ref SubnetIds]
+        - !If [MultiAZ , !Select [1, !Ref SubnetIds], !Ref "AWS::NoValue"]
+      Users:
+        - ConsoleAccess: !Ref ConsoleAccess
+          Password: !Ref Password
+          Username: !Ref Username
+      Tags: !If [HasTags, !GetAtt GetTags.Json, !Ref "AWS::NoValue"]
+
+
+Outputs:
+  BrokerArn:
+    Value: !GetAtt MQ.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-BrokerArn
+  IPAddresses:
+    Value: !GetAtt MQ.IpAddresses
+    Export:
+      Name: !Sub ${AWS::StackName}-IPAddresses   
+  AmqpEndpoints:
+    Value: !GetAtt MQ.AmqpEndpoints
+    Export:
+      Name: !Sub ${AWS::StackName}-AmqpEndpoints      
+  MqttEndpoints:
+    Value: !GetAtt MQ.MqttEndpoints
+    Export:
+      Name: !Sub ${AWS::StackName}-MqttEndpoints   
+  OpenWireEndpoints:
+    Value: !GetAtt MQ.OpenWireEndpoints
+    Export:
+      Name: !Sub ${AWS::StackName}-OpenWireEndpoints   
+  StompEndpoints:
+    Value: !GetAtt MQ.StompEndpoints
+    Export:
+      Name: !Sub ${AWS::StackName}-StompEndpoints       
+  WssEndpoints:
+    Value: !GetAtt MQ.WssEndpoints
+    Export:
+      Name: !Sub ${AWS::StackName}-WssEndpoints                         
+
+

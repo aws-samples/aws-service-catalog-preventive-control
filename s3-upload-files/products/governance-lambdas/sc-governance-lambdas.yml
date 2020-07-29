@@ -1,0 +1,99 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Service Catalog Lambda Functions
+Parameters:
+  DeploymentBucketName:
+    Description: Name of S3 Deploymenbt Bucket
+    Type: String
+  DeploymentPrefix:
+    Description: S3 Deployment Prefix
+    Type: String    
+    Default: 'share-code'
+  ProductSelectorLambdaRoleName:
+    Description: Product Selector Lambda Function Role Name
+    Type: String
+    Default: sc-product-selector-lambda-role
+  ResourceComplianceLambdaRoleName:
+    Description: Resource Compliance Lambda Function Role Name
+    Type: String
+    Default: sc-resource-compliance-lambda-role
+  ResourceSelectorLambdaRoleName:
+    Description: Resource Selector Lambda Function Role Name
+    Type: String
+    Default: sc-resource-selector-lambda-role
+   
+Conditions:
+  HasDeploymentPrefix: !Not [!Equals [!Ref DeploymentPrefix, '']]
+
+Resources:
+
+  ProductSelectorFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      FunctionName: sc-product-selector
+      Description: "Products Selector Lambda"
+      Handler: handler.lambda_handler 
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ProductSelectorLambdaRoleName}'
+      Code: 
+        S3Bucket: !Ref DeploymentBucketName
+        S3Key: !If [HasDeploymentPrefix , !Sub '${DeploymentPrefix}/product-selector-lambda.zip', "product-selector-lambda.zip"]
+      Runtime: python3.6
+      Timeout: 20
+
+  ResourceSelectorFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      FunctionName: sc-resource-selector 
+      Description: "Resources Selector Lambda"
+      Handler: handler.lambda_handler 
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ResourceSelectorLambdaRoleName}'
+      Code: 
+        S3Bucket: !Ref DeploymentBucketName
+        S3Key: !If [HasDeploymentPrefix , !Sub '${DeploymentPrefix}/resource-selector-lambda.zip', "resource-selector-lambda.zip"]
+      Runtime: python3.6
+      Timeout: 300
+      MemorySize: 1024
+      
+  ResourceComplianceFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      FunctionName: sc-resource-compliance
+      Description: "Resource Compliance Lambda"
+      Handler: handler.lambda_handler 
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ResourceComplianceLambdaRoleName}'
+      Code: 
+        S3Bucket: !Ref DeploymentBucketName
+        S3Key: !If [HasDeploymentPrefix , !Sub '${DeploymentPrefix}/resource-compliance-lambda.zip', "resource-compliance-lambda.zip"]
+      Runtime: python3.6
+      Timeout: 300
+
+Outputs:
+  ProductSelectorFunctionArn:
+    Value: !GetAtt ProductSelectorFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductSelectorFunctionArn
+  ResourceSelectorFunctionArn:
+    Value: !GetAtt ResourceSelectorFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ResourceSelectorFunctionArn
+  ResourceComplianceFunctionArn:
+    Value: !GetAtt ResourceComplianceFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ResourceComplianceFunctionArn                 
+   
+
+

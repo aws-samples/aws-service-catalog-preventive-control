@@ -1,0 +1,155 @@
+# * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Service Catalog Lambda Functions Roles
+Parameters:
+  ProductSelectorLambdaRoleName:
+    Description: Product Selector Lambda Function Role Name
+    Type: String
+    Default: sc-product-selector-lambda-role
+  ResourceComplianceLambdaRoleName:
+    Description: Resource Compliance Lambda Function Role Name
+    Type: String
+    Default: sc-resource-compliance-lambda-role
+  ResourceSelectorLambdaRoleName:
+    Description: Resource Selector Lambda Function Role Name
+    Type: String
+    Default: sc-resource-selector-lambda-role
+   
+Resources:
+
+  ProductSelectorLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref ProductSelectorLambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "Lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - servicecatalog:ListProvisioningArtifacts
+                  - servicecatalog:SearchProductsAsAdmin
+                  - servicecatalog:SearchProducts
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  ResourceComplianceLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref ResourceComplianceLambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "Lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - sqs:TagQueue
+                  - kms:DescribeKey
+                  - lambda:AddPermission
+                  - s3:PutBucketNotification
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  ResourceSelectorLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref ResourceSelectorLambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: "Lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeImages
+                  - kms:ListAliases
+                  - kms:ListKeys
+                  - kms:DescribeKey
+                  - iam:ListRoleTags
+                  - iam:ListPolicies
+                  - iam:ListRoles
+                  - acm:ListCertificates
+                  - acm:ListTagsForCertificate
+                  - pricing:DescribeServices
+                  - pricing:GetProducts
+                  - pricing:GetAttributeValues
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+ 
+Outputs:
+  ProductSelectorLambdaRoleArn:
+    Value: !GetAtt ProductSelectorLambdaRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductSelectorLambdaRoleArn
+  ResourceSelectorLambdaRoleArn:
+    Value: !GetAtt ResourceSelectorLambdaRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ResourceSelectorLambdaRoleArn
+  ResourceComplianceLambdaRoleArn:
+    Value: !GetAtt ResourceComplianceLambdaRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ResourceComplianceLambdaRoleArn                 
+   
+
+
