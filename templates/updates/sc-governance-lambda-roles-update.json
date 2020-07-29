@@ -1,0 +1,9 @@
+{
+    "SchemaVersion": "1.0",
+    "ProductVersionName": "1.1",
+    "ProductVersionDescription": "Governance Lambda Roles Update",
+    "ProductType": "CLOUD_FORMATION_TEMPLATE",
+    "Properties": {
+        "TemplateFilePath": "/sc-governance-lambda-roles.yml"
+    }
+}
