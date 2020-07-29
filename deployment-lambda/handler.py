@@ -72,6 +72,10 @@ def deployProduct(config):
                 'ParameterValue': config['Parameters']['ProductPolicyName']
             },
             {
+                'ParameterKey': 'PipelineRoleName',
+                'ParameterValue': os.environ['PipelineRole']
+            },            
+            {
                 'ParameterKey': 'ProductRoleTemplateUrl',
                 'ParameterValue': 'https://s3.amazonaws.com/'+config['Parameters']['ProductRoleTemplateUrl']
             },
