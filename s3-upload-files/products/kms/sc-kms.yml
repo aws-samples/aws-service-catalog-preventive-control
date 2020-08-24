@@ -20,12 +20,27 @@ Parameters:
     Description: 'KMS Key Alias'
     Type: String
     Default: ''
+  Principals:
+    Description: 'KMS AWS Comma Delimiter Principals'
+    Type: String 
 
 Conditions:
   CreateKeyAlias: !Not [!Equals [!Ref KeyAlies, '']]
 
 Resources:
- 
+
+  KMSPrincipals:
+      Type: "Custom::ResourceCompliance"
+      Version: "1.0"
+      Properties:
+        ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-resource-compliance'
+        Action:
+          Name: principal
+          Parameters:
+            Principal: !Ref Principals
+            Account: !Ref AWS::AccountId
+            Type: kms
+
   KMSKey:
     Type: AWS::KMS::Key
     Properties:
@@ -39,7 +54,7 @@ Resources:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'               
+              AWS: !GetAtt KMSPrincipals.Principal         
             Action: 'kms:*'
             Resource: '*'
 
@@ -55,6 +70,10 @@ Outputs:
     Value: !Ref KMSKey
     Export:
       Name: !Sub ${AWS::StackName}-KMSId
+  KMSArn:
+    Value: !GetAtt KMSKey.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-KMSArn      
   KMSAlias:
     Condition: CreateKeyAlias
     Value: !Ref KMSAlias

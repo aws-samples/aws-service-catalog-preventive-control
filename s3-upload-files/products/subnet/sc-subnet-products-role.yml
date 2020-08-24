@@ -42,16 +42,20 @@ Resources:
         - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${ProductPolicyName}'
       Policies:
         -
-          PolicyName: "ASC"
+          PolicyName: "Subnet"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               -
                 Effect: "Allow"
                 Action:
-                  - "iam:PassRole"
-                  - "autoscaling:*"
-                  - "kms:GenerateDataKey"
+                  - "ec2:DeleteSubnet"
+                  - "ec2:DeleteTags"
+                  - "ec2:DescribeTags"
+                  - "ec2:CreateTags"
+                  - "ec2:AssociateSubnetCidrBlock"
+                  - "ec2:CreateSubnet"
+                  - "ec2:DescribeSubnets"
                 Resource: "*"
                 
 Outputs:

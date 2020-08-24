@@ -42,18 +42,22 @@ Resources:
         - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${ProductPolicyName}'
       Policies:
         -
-          PolicyName: "ASC"
+          PolicyName: "Kinesis"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               -
                 Effect: "Allow"
                 Action:
+                  - "firehose:DescribeDeliveryStream"
+                  - "firehose:DeleteDeliveryStream"
+                  - "firehose:CreateDeliveryStream"
+                  - "firehose:ListTagsForDeliveryStream"
+                  - "firehose:TagDeliveryStream"
+                  - "firehose:UntagDeliveryStream"
                   - "iam:PassRole"
-                  - "autoscaling:*"
-                  - "kms:GenerateDataKey"
                 Resource: "*"
-                
+
 Outputs:
   ProductRoleArn:
     Value: !GetAtt ProductRole.Arn

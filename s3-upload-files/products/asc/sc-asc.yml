@@ -16,7 +16,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Service Catalog AutoScaling Product
 Parameters:
-  ALBTargetGroupStack:
+  ALBTargetGroupArn:
     Description: ALB Target Group ARN
     Type: String
   AppInstanceType:
@@ -55,10 +55,6 @@ Parameters:
     Default: 1
   SNSTopicARN:
     Description: Notification Topic ARN
-    Type: String
-    Default: ''
-  SNSTopicStackName:
-    Description: Notification Topic Service Catalog SNS Stack
     Type: String
     Default: ''
   EnableScalePolicy:
@@ -112,7 +108,6 @@ Parameters:
 
 Conditions:
   IsMinZero: !Equals [!Ref AppMinCount, 0]
-  IsSNSStack: !Not [!Equals [!Ref SNSTopicStackName, ""]]
   IsSNSArn: !Not [!Equals [!Ref SNSTopicARN, ""]]
   EnablePolicy: !Equals [!Ref EnableScalePolicy, true]
   HasEC2Role: !Not [!Equals [!Ref AppEC2IAMRole, ""]]
@@ -156,33 +151,21 @@ Resources:
     Properties:
       NotificationConfigurations:
         - !If
-            - IsSNSArn
-            - TopicARN:
-                !Ref SNSTopicARN
-              NotificationTypes:
-                - autoscaling:EC2_INSTANCE_LAUNCH
-                - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
-                - autoscaling:EC2_INSTANCE_TERMINATE
-                - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
-            - !If
-              - IsSNSStack
-              - TopicARN:
-                  Fn::ImportValue:
-                      !Sub "${SNSTopicStackName}-SNSArn"
-                NotificationTypes:
-                  - autoscaling:EC2_INSTANCE_LAUNCH
-                  - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
-                  - autoscaling:EC2_INSTANCE_TERMINATE
-                  - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
-              - !Ref "AWS::NoValue"
+          - IsSNSArn
+          - TopicARN: !Ref SNSTopicARN
+            NotificationTypes:
+              - autoscaling:EC2_INSTANCE_LAUNCH
+              - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
+              - autoscaling:EC2_INSTANCE_TERMINATE
+              - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
+          - !Ref "AWS::NoValue"
       TerminationPolicies:
         - OldestInstance
       DesiredCapacity: !If [IsMinZero, 1, !Ref AppMinCount]
       HealthCheckGracePeriod: !Ref AppHealthCheckGracePeriod
       HealthCheckType: !Ref HealthCheckType
-      TargetGroupARNs:
-        - Fn::ImportValue:
-            !Sub "${ALBTargetGroupStack}-ALBTargetId"
+      TargetGroupARNs: 
+        - !Ref ALBTargetGroupArn
       LaunchConfigurationName: !Ref LaunchConfig
       MaxSize: !Ref AppMaxCount
       MetricsCollection:
@@ -208,6 +191,7 @@ Resources:
       Cooldown: !Ref ScaleInCooldown
       ScalingAdjustment: !Ref ScaleInAdjustment
       PolicyType: SimpleScaling
+      
 Outputs:
   AppASGName:
     Value: !Ref AppASG

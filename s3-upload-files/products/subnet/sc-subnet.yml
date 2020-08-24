@@ -13,42 +13,38 @@
 # * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-AWSTemplateFormatVersion: 2010-09-09
-Description: Service Catalog ALB Listener Product
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Service Catalog Subnet Product
+
 Parameters:
-  CertificateArn:
-    Description: ARN of ACM Certificate to apply to ALB
+  Name:
+    Description: Subnet Name
     Type: String
-    Default: ""
-  ALBTargetGroupArn:
-    Description: ALB Target Group ARN
+    Default: "sc-demo-subnet"
+  SubnetCIDR:
+    Description: Subnet CIDR Block
     Type: String
-  ALBArn:
-    Description: ALB ARN
-    Type: String
-  AppPort:
-    Description: 'Application Port'
-    Type: String
-    Default: 443
-    AllowedValues:
-      - 443
-      - 8443
+    Default: "172.16.1.0/16" 
+  SubnetAZ:
+    Description: Subnet Availability Zone
+    Type: String  
+  VPC:
+    Description: VPC
+    Type: String  
 
 Resources:
-  ALBListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+  Subnet:
+    Type: AWS::EC2::Subnet
     Properties:
-      Certificates:
-        - CertificateArn: !Ref CertificateArn
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref ALBTargetGroupArn
-      LoadBalancerArn: !Ref ALBArn
-      Port: !Ref AppPort
-      Protocol: HTTPS
+      AvailabilityZone: !Ref SubnetAZ
+      CidrBlock: !Ref SubnetCIDR
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Ref Name
 
 Outputs:
-  ALBListenerArn:
-    Value: !Ref ALBListener
+  SubnetId:
+    Value: !Ref Subnet
     Export:
-      Name: !Sub ${AWS::StackName}-ALBListenerArn
+      Name: !Sub ${AWS::StackName}-SubnetId       

@@ -13,42 +13,32 @@
 # * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-AWSTemplateFormatVersion: 2010-09-09
-Description: Service Catalog ALB Listener Product
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Service Catalog VPC Product
+
 Parameters:
-  CertificateArn:
-    Description: ARN of ACM Certificate to apply to ALB
+  Name:
+    Description: VPC Name
     Type: String
-    Default: ""
-  ALBTargetGroupArn:
-    Description: ALB Target Group ARN
+    Default: "sc-demo-vpc"
+  VPCCIDR:
+    Description: VPC CIDR Block
     Type: String
-  ALBArn:
-    Description: ALB ARN
-    Type: String
-  AppPort:
-    Description: 'Application Port'
-    Type: String
-    Default: 443
-    AllowedValues:
-      - 443
-      - 8443
+    Default: "172.16.0.0/16"    
 
 Resources:
-  ALBListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+  VPC:
+    Type: AWS::EC2::VPC
     Properties:
-      Certificates:
-        - CertificateArn: !Ref CertificateArn
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref ALBTargetGroupArn
-      LoadBalancerArn: !Ref ALBArn
-      Port: !Ref AppPort
-      Protocol: HTTPS
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Name
+          Value: !Ref Name 
 
 Outputs:
-  ALBListenerArn:
-    Value: !Ref ALBListener
+  VPCId:
+    Value: !Ref VPC
     Export:
-      Name: !Sub ${AWS::StackName}-ALBListenerArn
+      Name: !Sub ${AWS::StackName}-VPCId    
