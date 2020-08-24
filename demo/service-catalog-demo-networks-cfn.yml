@@ -1,0 +1,257 @@
+# * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# * software and associated documentation files (the "Software"), to deal in the Software
+# * without restriction, including without limitation the rights to use, copy, modify,
+# * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Service Catalog Demo - Networks
+Resources:
+  ProductSelectorVPC:
+    Type: "Custom::ProductSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      ProductName: vpc
+
+  ProductSelectorSubnet:
+    Type: "Custom::ProductSelector"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
+      ProductName: subnet
+
+  VPC:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProvisionedProductName: 'sc-demo-vpc'
+      ProvisioningParameters:
+        - Key: Name
+          Value: "sc-demo-vpc"
+        - Key: VPCCIDR
+          Value: "172.16.0.0/16"
+      ProductId: !GetAtt ProductSelectorVPC.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelectorVPC.ArtifactId
+
+  SubnetA:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    DependsOn: VPC
+    Properties:
+      ProvisionedProductName: 'sc-demo-subnet-1'
+      ProvisioningParameters:
+        - Key: Name
+          Value: "sc-demo-web-subnet-1"
+        - Key: SubnetCIDR
+          Value: "172.16.1.0/24"
+        - Key: SubnetAZ
+          Value: 
+            Fn::Select:
+              - 0
+              - Fn::GetAZs: ""          
+        - Key: VPC
+          Value: !GetAtt VPC.Outputs.VPCId                   
+      ProductId: !GetAtt ProductSelectorSubnet.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelectorSubnet.ArtifactId
+
+  SubnetB:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    DependsOn: VPC
+    Properties:
+      ProvisionedProductName: 'sc-demo-subnet-2'
+      ProvisioningParameters:
+        - Key: Name
+          Value: "sc-demo-web-subnet-2"
+        - Key: SubnetCIDR
+          Value: "172.16.2.0/24"
+        - Key: SubnetAZ
+          Value: 
+            Fn::Select:
+              - 1
+              - Fn::GetAZs: ""          
+        - Key: VPC
+          Value: !GetAtt VPC.Outputs.VPCId                   
+      ProductId: !GetAtt ProductSelectorSubnet.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelectorSubnet.ArtifactId
+
+  SubnetC:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    DependsOn: VPC
+    Properties:
+      ProvisionedProductName: 'sc-demo-subnet-3'
+      ProvisioningParameters:
+        - Key: Name
+          Value: "sc-demo-app-subnet-1"
+        - Key: SubnetCIDR
+          Value: "172.16.3.0/24"
+        - Key: SubnetAZ
+          Value: 
+            Fn::Select:
+              - 0
+              - Fn::GetAZs: ""          
+        - Key: VPC
+          Value: !GetAtt VPC.Outputs.VPCId                   
+      ProductId: !GetAtt ProductSelectorSubnet.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelectorSubnet.ArtifactId
+
+  SubnetD:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    DependsOn: VPC
+    Properties:
+      ProvisionedProductName: 'sc-demo-subnet-4'
+      ProvisioningParameters:
+        - Key: Name
+          Value: "sc-demo-app-subnet-2"
+        - Key: SubnetCIDR
+          Value: "172.16.4.0/24"
+        - Key: SubnetAZ
+          Value: 
+            Fn::Select:
+              - 1
+              - Fn::GetAZs: ""          
+        - Key: VPC
+          Value: !GetAtt VPC.Outputs.VPCId                   
+      ProductId: !GetAtt ProductSelectorSubnet.ProductId
+      ProvisioningArtifactId: !GetAtt ProductSelectorSubnet.ArtifactId
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !GetAtt VPC.Outputs.VPCId 
+      Tags:
+      - Key: Name
+        Value: sc-demo-route-table
+
+  SubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !GetAtt SubnetA.Outputs.SubnetId
+      RouteTableId:
+        Ref: RouteTable
+
+  SubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !GetAtt SubnetB.Outputs.SubnetId
+      RouteTableId:
+        Ref: RouteTable
+
+  SubnetRouteTableAssociationC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !GetAtt SubnetC.Outputs.SubnetId
+      RouteTableId:
+        Ref: RouteTable
+
+  SubnetRouteTableAssociationD:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !GetAtt SubnetD.Outputs.SubnetId
+      RouteTableId:
+        Ref: RouteTable
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SC Demo Web Security Group
+      GroupName: sc-demo-web-sg
+      VpcId: !GetAtt VPC.Outputs.VPCId 
+      Tags:
+        - Key: Name
+          Value: sc-demo-web-sg
+
+  HTTPSInbound:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 172.16.0.0/16
+
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    DependsOn: RouteTable
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:GetObject'
+            Resource:
+              - '*'
+      RouteTableIds:
+        - !Ref RouteTable
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .s3
+      VpcId: !GetAtt VPC.Outputs.VPCId 
+
+  FirehoseEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    DependsOn: RouteTable
+    Properties:
+      PrivateDnsEnabled: true
+      VpcId: !GetAtt VPC.Outputs.VPCId 
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .kinesis-firehose
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: '*'
+            Resource: '*'
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !GetAtt SubnetA.Outputs.SubnetId
+        - !GetAtt SubnetB.Outputs.SubnetId
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+
+  KinesisEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    DependsOn: RouteTable
+    Properties:
+      PrivateDnsEnabled: true
+      VpcId: !GetAtt VPC.Outputs.VPCId 
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .kinesis-streams
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !GetAtt SubnetA.Outputs.SubnetId
+        - !GetAtt SubnetB.Outputs.SubnetId
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+
+Outputs:
+  VPCId:
+    Value: !Ref VPC
+  SubnetA:
+    Value: !Ref SubnetA
+  SubnetB:
+    Value: !Ref SubnetB
+  SubnetC:
+    Value: !Ref SubnetC
+  SubnetD:
+    Value: !Ref SubnetD
+  CoreSG:
+    Value: !Ref WebSecurityGroup
