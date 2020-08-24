@@ -23,7 +23,7 @@ deployment_lambda_function_name="sc-product-deployment"
 deployment_s3_bucket_name="<enter the name of Amazon S3 bucket that will be use to deploy solution>"
 aws_cli_profile="default"
 
-products_to_deploy=(sqs kinesis sns elasticsearch elasticache ebs efs dmsinstance dmsendpoint autoscaling alb albtarget alblistener fsx dynamodb sagemaker s3 kms mq governance-lambdas governance-lambda-roles)
+products_to_deploy=(sqs kinesis sns elasticsearch elasticache ebs efs dmsinstance dmsendpoint autoscaling alb albtarget alblistener fsx dynamodb sagemaker s3 kms mq governance-lambdas governance-lambda-roles vpc subnet firehose)
 delete_products="yes"
 
 # check if the name of deployment S3 bucket provided in script argument
@@ -67,7 +67,7 @@ printf "Deleting Lambda Functions\n"
 aws cloudformation delete-stack --stack-name $lambda_functions_cfn_stack_name --profile $aws_cli_profile
 
 printf "Cleaning S3 Bucket: $deployment_s3_bucket_name\n"
-echo '#!/bin/bash' > deleteBucketScript.sh && aws --output text s3api list-object-versions --bucket $deployment_s3_bucket_name --profile $aws_cli_profile | grep -E "^VERSIONS" | awk '{print "aws s3api delete-object --profile $aws_cli_profile --bucket $deployment_s3_bucket_name --key "$4" --version-id "$8";"}' >> deleteBucketScript.sh && . deleteBucketScript.sh; rm -f deleteBucketScript.sh; echo '#!/bin/bash' > deleteBucketScript.sh && aws --output text s3api list-object-versions --bucket $deployment_s3_bucket_name | grep -E "^DELETEMARKERS" | grep -v "null" | awk '{print "aws s3api delete-object --bucket $deployment_s3_bucket_name --key "$3" --version-id "$5";"}' >> deleteBucketScript.sh && . deleteBucketScript.sh; rm -f deleteBucketScript.sh;
+echo '#!/bin/bash' > deleteBucketScript.sh && aws --output text s3api list-object-versions --bucket $deployment_s3_bucket_name --profile $aws_cli_profile | grep -E "^VERSIONS" | awk '{print "aws s3api delete-object --profile $aws_cli_profile --bucket $deployment_s3_bucket_name --key "$4" --version-id "$8";"}' >> deleteBucketScript.sh && . deleteBucketScript.sh; rm -f deleteBucketScript.sh; echo '#!/bin/bash' > deleteBucketScript.sh && aws --output text s3api list-object-versions --bucket $deployment_s3_bucket_name --profile $aws_cli_profile | grep -E "^DELETEMARKERS" | grep -v "null" | awk '{print "aws s3api delete-object --bucket $deployment_s3_bucket_name --profile $aws_cli_profile --key "$3" --version-id "$5";"}' >> deleteBucketScript.sh && . deleteBucketScript.sh; rm -f deleteBucketScript.sh;
 
 printf "Deleting S3 Bucket: $deployment_s3_bucket_name\n"
 aws s3 rb s3://$deployment_s3_bucket_name --force --profile $aws_cli_profile
