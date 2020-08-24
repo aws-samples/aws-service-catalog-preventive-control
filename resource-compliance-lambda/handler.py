@@ -225,6 +225,7 @@ def lambda_handler(event, context):
         if 'principal' == action.lower() and params:
             accountid = (params['Account'] if 'Account' in params else None)
             principals = ((params['Principal']).split(',') if 'Principal' in params else None)
+            type = (params['Type'] if 'Type' in params else None)
 
             if not accountid or not principals:
                 # Failed CFN stack if account id or principal missing
@@ -233,13 +234,21 @@ def lambda_handler(event, context):
                 return event
 
             npList = []
-            for p in principals:
-                np = p
-                if p == "*":
-                    np = accountid
-                if not np in npList:
+            npstr = None
+            if not type:
+                for p in principals:
+                    np = p
+                    if p == "*":
+                        np = accountid
+                    if not np in npList:
+                        npList.append(np)
+                npstr = ','.join(npList)
+            elif type == 'kms':
+                for p in principals:
+                    np = p.replace('{accountid}',accountid)
                     npList.append(np)
-            npstr = ','.join(npList)
+
+                npstr = npList
 
             # return formated principal back to CFN
             responsedata['Principal'] = npstr
