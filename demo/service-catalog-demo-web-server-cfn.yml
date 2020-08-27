@@ -162,12 +162,6 @@ Resources:
     Properties:
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
       ProductName: sns
-  ProductSelectorES:
-    Type: "Custom::ProductSelector"
-    Version: "1.0"
-    Properties:
-      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sc-product-selector'
-      ProductName: elasticsearch
   ProductSelectorS3:
     Type: "Custom::ProductSelector"
     Version: "1.0"
@@ -266,7 +260,7 @@ Resources:
         -
           Ref: "EC2Role"
 
-  DemoKMSKey:
+  KMSKey:
     Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
     DependsOn: EC2InstanceProfile
     Properties:
@@ -281,14 +275,14 @@ Resources:
 
   S3Bucket:
     Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
-    DependsOn: DemoKMSKey
+    DependsOn: KMSKey
     Properties:
       ProvisionedProductName: 'sc-demo-s3'
       ProvisioningParameters:
         - Key: BucketName
           Value: !Ref BucketName
         - Key: KMSId
-          Value: !GetAtt DemoKMSKey.Outputs.KMSId
+          Value: !GetAtt KMSKey.Outputs.KMSId
       ProductId: !GetAtt ProductSelectorS3.ProductId
       ProvisioningArtifactId: !GetAtt ProductSelectorS3.ArtifactId
 
@@ -305,7 +299,7 @@ Resources:
         - Key: RoleArn
           Value: !GetAtt KinesisRole.Arn
         - Key: KMSArn
-          Value: !GetAtt DemoKMSKey.Outputs.KMSArn
+          Value: !GetAtt KMSKey.Outputs.KMSArn
       ProductId: !GetAtt ProductSelectorFirehose.ProductId
       ProvisioningArtifactId: !GetAtt ProductSelectorFirehose.ArtifactId
 
@@ -318,7 +312,7 @@ Resources:
         - Key: TopicName
           Value: !Ref TopicName
         - Key: KMSId
-          Value: !GetAtt DemoKMSKey.Outputs.KMSId
+          Value: !GetAtt KMSKey.Outputs.KMSId
         - Key: PolicyPrincipal
           Value: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling'
         - Key: PolicyAction
