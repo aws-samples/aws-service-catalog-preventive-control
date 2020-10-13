@@ -1,0 +1,31 @@
+products:
+  - product_name: sc-governance-lambdas-product
+    portfolio_name: security-products
+    provision_name: sc-governance-lambdas-us-east-1
+    dependson: 
+      - sc-governance-lambda-roles
+    parameters:
+      - Key: DeploymentBucketName
+        Value: my-deployment-bucket-in-us-east-1
+    regions:
+      - us-east-1      
+    accounts:
+      - 'my account id' 
+    deployifnotexist: true            
+  - product_name: sc-governance-lambdas-product
+    portfolio_name: security-products
+    provision_name: sc-governance-lambdas-us-east-2
+    dependson: 
+      - sc-governance-lambda-roles
+    parameters:
+      - Key: DeploymentBucketName
+        Value: my-deployment-bucket-in-us-east-2
+    regions:
+      - us-east-2   
+    accounts:
+      - 'my account id'    
+    deployifnotexist: true                                                    
+              
+max_iterations: 40                 
+    
+    

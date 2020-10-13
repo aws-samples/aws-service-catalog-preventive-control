@@ -1,0 +1,21 @@
+products:
+  - product_name: <product name> # name of the product
+    product_version: <(optional) product version # optional value. If omitted the latest version of product will be deployed
+    portfolio_name: <portfolio name> # name of the portfolio 
+    provision_name: <product provision name> # name use by Service Catalog to provision new product 
+    dependson: # optional: list of the provision names that must to be updated or deployed before product
+      - <provision name dependency>
+    parameters: # optional: list of parameters and values
+      - Key: <parameter key name>
+        Value: <parameter key value>
+    regions: # list of AWS regions where to update or deploy product
+      - <aws region>
+    accounts: # list of AWS account ids where update or deploy product
+      - <account id>
+    organization_units: # list of organization units where update or deploy product
+      - <organization unit name>
+    deployifnotexist: true              
+# optional: overwrite default value for maximum iteration 
+max_iterations: <number of iterations>              
+    
+    

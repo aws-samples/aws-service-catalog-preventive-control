@@ -1,0 +1,54 @@
+organization_units:
+  Developers: 
+    products:
+      - product_name: sc-kms-product
+        portfolio_name: security-products
+        provision_name: efs-kms-key
+        parameters:
+          - Key: KeyAlies
+            Value: efs-kms-key          
+        regions:
+          - us-east-1    
+          - us-east-2     
+      - product_name: sc-efs-product
+        portfolio_name: security-products
+        provision_name: sc-efs
+        dependson: 
+          - efs-kms-key
+        parameters:
+          - Key: KMSId
+            Value: 'alias/efs-kms-key'          
+        regions:
+          - us-east-1    
+          - us-east-2   
+  default:
+    products:  
+      - product_name: sc-governance-lambdas-product
+        portfolio_name: security-products
+        provision_name: sc-governance-lambdas-us-east-1
+        dependson: 
+          - sc-governance-lambda-roles
+        parameters:
+          - Key: DeploymentBucketName
+            Value: my-deployment-bucket-in-us-east-1
+        regions:
+          - us-east-1      
+      - product_name: sc-governance-lambdas-product
+        portfolio_name: security-products
+        provision_name: sc-governance-lambdas-us-east-2
+        dependson: 
+          - sc-governance-lambda-roles
+        parameters:
+          - Key: DeploymentBucketName
+            Value: my-deployment-bucket-in-us-east-2
+        regions:
+          - us-east-2                                                     
+      - product_name: sc-governance-lambda-roles-product
+        portfolio_name: security-products
+        provision_name: sc-governance-lambda-roles
+        regions:
+          - us-east-1    
+     
+max_iterations: 40                 
+    
+    
