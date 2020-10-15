@@ -6,7 +6,7 @@ organization_units:
       - product_name: <product name> # name of the product
         product_version: <(optional) product version # optional value. If omitted the latest version of product will be deployed
         portfolio_name: <portfolio name> # name of the portfolio 
-        provision_name: <product provision name> # name use by Service Catalog to provision product 
+        provision_name: <product provision name> # name use by AWS Service Catalog to provision product 
         dependson: # optional: list of the provision names that must to be deployed before product
           - <provision name dependency>
         parameters: # optional: list of parameters and values
@@ -21,7 +21,7 @@ organization_units:
       - product_name: <product name> # name of the product
         product_version: <(optional) product version # optional value. If omitted the latest version of product will be deployed
         portfolio_name: <portfolio name> # name of the portfolio 
-        provision_name: <product provision name> # name use by Service Catalog to provision product 
+        provision_name: <product provision name> # name use by AWS Service Catalog to provision product 
         dependson: # optional: list of the provision names that have to be deploy before product
           - <provision name dependency>
         parameters: # optional: list of parameters and values
