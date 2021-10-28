@@ -50,7 +50,7 @@ class BaselineFunction():
         self.region = region
         notification_topic = os.environ['notification_topic']
         if notification_topic != 'none':
-            self.sns_topic_arn = f'arn:aws:sns:us-east-1:{master_account_id}:{notification_topic}'
+            self.sns_topic_arn = f'arn:aws:sns:{region}:{master_account_id}:{notification_topic}'
 
         self.s3_client = boto3.client('s3')
         self.sc_client = boto3.client('servicecatalog', region_name=region)
@@ -398,7 +398,7 @@ class BaselineFunction():
 
             # call SFN
             sfn_client.start_execution(
-                stateMachineArn=f'arn:aws:states:us-east-1:620936997165:stateMachine:{self.state_machine_name}',
+                stateMachineArn=f'arn:aws:states:{self.region}:{self.master_account}:stateMachine:{self.state_machine_name}',
                 name=sfn_execution_name,
                 input=sfn_input
             )
